@@ -56,7 +56,7 @@ export type SearchFilters = {
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (username: string, email: string, password: string, role: 'user' | 'mediator') => Promise<void>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<any>; // Changed from Promise<void> to Promise<any>
+  signup: (username: string, email: string, password: string, role: 'user' | 'mediator') => Promise<any>; // Changed from Promise<void> to Promise<any>
+  logout: () => Promise<void>;
 }
