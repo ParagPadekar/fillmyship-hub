@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { createListing, getAllPorts } from '@/lib/db';
 import { Listing, Location } from '@/types';
 
@@ -58,7 +57,6 @@ const ListingForm: React.FC = () => {
   };
 
   const handlePortSelect = (port: string, type: 'departure' | 'destination') => {
-    // Extract country from port (format: "Port, Country")
     const parts = port.split(', ');
     if (parts.length === 2) {
       if (type === 'departure') {
@@ -77,7 +75,6 @@ const ListingForm: React.FC = () => {
         setShowDestinationSuggestions(false);
       }
     } else {
-      // Just set the port if no country is found
       if (type === 'departure') {
         setFormData(prev => ({ ...prev, departurePort: port }));
         setShowDepartureSuggestions(false);
@@ -102,7 +99,6 @@ const ListingForm: React.FC = () => {
       return;
     }
     
-    // Validate form
     if (
       !formData.title ||
       !formData.departurePort ||
@@ -119,7 +115,6 @@ const ListingForm: React.FC = () => {
       return;
     }
     
-    // Check that delivery date is after departure date
     if (formData.departureDate && formData.deliveryDate && 
         formData.deliveryDate <= formData.departureDate) {
       toast.error('Delivery date must be after departure date');

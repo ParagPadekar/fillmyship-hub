@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/sonner';
 import { Star } from 'lucide-react';
+import { toast } from 'sonner';
 import { addReview } from '@/lib/db';
 
 interface ReviewFormProps {
