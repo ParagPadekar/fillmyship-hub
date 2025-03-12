@@ -7,25 +7,56 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import { useEffect, useState } from "react";
+import { supabase } from "./lib/supabase";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [supabaseInitialized, setSupabaseInitialized] = useState(false);
+
+  useEffect(() => {
+    // Test Supabase connection
+    const checkSupabaseConnection = async () => {
+      try {
+        const { data, error } = await supabase.from('_test_connection').select('*').limit(1);
+        
+        if (error && error.code !== 'PGRST116') {
+          // PGRST116 is "relation does not exist" which is expected if the table doesn't exist
+          console.error('Supabase connection error:', error);
+          toast.error('Failed to connect to Supabase');
+        } else {
+          console.log('Successfully connected to Supabase');
+          toast.success('Connected to Supabase');
+          setSupabaseInitialized(true);
+        }
+      } catch (error) {
+        console.error('Supabase initialization error:', error);
+        toast.error('Failed to initialize Supabase connection');
+      }
+    };
+
+    checkSupabaseConnection();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
