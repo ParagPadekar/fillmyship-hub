@@ -3,7 +3,7 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  role: 'user' | 'mediator' | 'admin';
+  role: 'customer' | 'mediator' | 'admin';
   createdAt: Date;
   company?: string;
 }
@@ -56,7 +56,7 @@ export type SearchFilters = {
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<any>; // Changed from Promise<void> to Promise<any>
-  signup: (username: string, email: string, password: string, role: 'user' | 'mediator') => Promise<any>; // Changed from Promise<void> to Promise<any>
+  login: (email: string, password: string) => Promise<any>;
+  signup: (username: string, email: string, password: string, role: 'customer' | 'mediator' | 'admin') => Promise<any>;
   logout: () => Promise<void>;
 }

@@ -38,7 +38,7 @@ const signupSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  role: z.enum(['user', 'mediator'], {
+  role: z.enum(['customer', 'mediator'], {
     required_error: 'Please select a role',
   }),
   company: z.string().optional(),
@@ -57,7 +57,7 @@ const Signup = () => {
       username: '',
       email: '',
       password: '',
-      role: 'user',
+      role: 'customer',
       company: '',
     },
   });
@@ -161,7 +161,7 @@ const Signup = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="user">Cargo Owner</SelectItem>
+                          <SelectItem value="customer">Customer</SelectItem>
                           <SelectItem value="mediator">Shipping Mediator</SelectItem>
                         </SelectContent>
                       </Select>

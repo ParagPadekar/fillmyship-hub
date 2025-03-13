@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             id: session.user.id,
             username: profile?.username || session.user.email?.split('@')[0] || '',
             email: session.user.email || '',
-            role: session.user.user_metadata.role || 'user',
+            role: session.user.user_metadata.role || 'customer',
             createdAt: new Date(session.user.created_at),
             company: profile?.company || session.user.user_metadata.company,
           });
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           id: session.user.id,
           username: profile?.username || session.user.email?.split('@')[0] || '',
           email: session.user.email || '',
-          role: session.user.user_metadata.role || 'user',
+          role: session.user.user_metadata.role || 'customer',
           createdAt: new Date(session.user.created_at),
           company: profile?.company || session.user.user_metadata.company,
         });
@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signup = async (username: string, email: string, password: string, role: 'user' | 'mediator') => {
+  const signup = async (username: string, email: string, password: string, role: 'customer' | 'mediator' | 'admin') => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
