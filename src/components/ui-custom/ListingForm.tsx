@@ -1,9 +1,8 @@
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { createListing, getAllPorts } from '@/lib/db';
-import { Listing, Location } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,74 +14,29 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const ListingForm: React.FC = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const allPorts = getAllPorts();
+interface ListingFormProps {
+  onClose?: () => void;
+}
 
+const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
-    departurePort: '',
-    departureCountry: '',
-    destinationPort: '',
-    destinationCountry: '',
-    departureDate: undefined as Date | undefined,
-    deliveryDate: undefined as Date | undefined,
-    pricePerTon: '',
-    availableTons: '',
+    route_origin: '',
+    route_destination: '',
+    route_distance: '',
+    departure_date: undefined as Date | undefined,
+    delivery_date: undefined as Date | undefined,
+    price_per_ton: '',
+    capacity: '',
     description: '',
-    vesselDetails: '',
-    additionalServices: ''
   });
 
-  const [showDepartureSuggestions, setShowDepartureSuggestions] = useState(false);
-  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const departureSuggestions = formData.departurePort
-    ? allPorts.filter(port => 
-        port.toLowerCase().includes(formData.departurePort.toLowerCase())
-      ).slice(0, 5)
-    : [];
-    
-  const destinationSuggestions = formData.destinationPort
-    ? allPorts.filter(port => 
-        port.toLowerCase().includes(formData.destinationPort.toLowerCase())
-      ).slice(0, 5)
-    : [];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handlePortSelect = (port: string, type: 'departure' | 'destination') => {
-    const parts = port.split(', ');
-    if (parts.length === 2) {
-      if (type === 'departure') {
-        setFormData(prev => ({
-          ...prev,
-          departurePort: parts[0],
-          departureCountry: parts[1]
-        }));
-        setShowDepartureSuggestions(false);
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          destinationPort: parts[0],
-          destinationCountry: parts[1]
-        }));
-        setShowDestinationSuggestions(false);
-      }
-    } else {
-      if (type === 'departure') {
-        setFormData(prev => ({ ...prev, departurePort: port }));
-        setShowDepartureSuggestions(false);
-      } else {
-        setFormData(prev => ({ ...prev, destinationPort: port }));
-        setShowDestinationSuggestions(false);
-      }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,7 +44,6 @@ const ListingForm: React.FC = () => {
     
     if (!user) {
       toast.error('You must be logged in to create a listing');
-      navigate('/login');
       return;
     }
     
@@ -101,22 +54,20 @@ const ListingForm: React.FC = () => {
     
     if (
       !formData.title ||
-      !formData.departurePort ||
-      !formData.departureCountry ||
-      !formData.destinationPort ||
-      !formData.destinationCountry ||
-      !formData.departureDate ||
-      !formData.deliveryDate ||
-      !formData.pricePerTon ||
-      !formData.availableTons ||
-      !formData.description
+      !formData.route_origin ||
+      !formData.route_destination ||
+      !formData.route_distance ||
+      !formData.departure_date ||
+      !formData.delivery_date ||
+      !formData.price_per_ton ||
+      !formData.capacity
     ) {
       toast.error('Please fill in all required fields');
       return;
     }
     
-    if (formData.departureDate && formData.deliveryDate && 
-        formData.deliveryDate <= formData.departureDate) {
+    if (formData.departure_date && formData.delivery_date && 
+        formData.delivery_date <= formData.departure_date) {
       toast.error('Delivery date must be after departure date');
       return;
     }
@@ -124,40 +75,35 @@ const ListingForm: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const departureLocation: Location = {
-        port: formData.departurePort,
-        country: formData.departureCountry
-      };
-      
-      const destinationLocation: Location = {
-        port: formData.destinationPort,
-        country: formData.destinationCountry
-      };
-      
-      const listingData: Omit<Listing, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'reviews' | 'averageRating'> = {
+      const listingData = {
+        mediator_id: user.id,
+        mediator_name: user.company || user.username,
         title: formData.title,
-        mediatorId: user.id,
-        mediatorName: user.company || user.username,
-        departureLocation,
-        destinationLocation,
-        departureDate: formData.departureDate!,
-        deliveryDate: formData.deliveryDate!,
-        pricePerTon: parseFloat(formData.pricePerTon),
-        currency: 'USD',
-        availableTons: parseFloat(formData.availableTons),
-        description: formData.description,
-        vesselDetails: formData.vesselDetails || undefined,
-        additionalServices: formData.additionalServices ? 
-          formData.additionalServices.split(',').map(s => s.trim()) : 
-          undefined
+        route_origin: formData.route_origin,
+        route_destination: formData.route_destination,
+        route_distance: parseInt(formData.route_distance),
+        departure_date: formData.departure_date,
+        delivery_date: formData.delivery_date,
+        price_per_ton: parseFloat(formData.price_per_ton),
+        capacity: parseInt(formData.capacity),
+        description: formData.description || null,
+        status: 'pending' // All new listings start as pending
       };
       
-      await createListing(listingData);
+      const { error } = await supabase
+        .from('listings')
+        .insert([listingData]);
+      
+      if (error) throw error;
+      
       toast.success('Listing created successfully and pending review');
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error('Failed to create listing');
-      console.error(error);
+      
+      if (onClose) {
+        onClose();
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create listing');
+      console.error('Error creating listing:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -180,88 +126,42 @@ const ListingForm: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="departurePort">Departure Port</Label>
-            <div className="relative">
-              <Input
-                id="departurePort"
-                name="departurePort"
-                value={formData.departurePort}
-                onChange={handleChange}
-                onFocus={() => setShowDepartureSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowDepartureSuggestions(false), 200)}
-                placeholder="e.g. Shanghai"
-                required
-              />
-              {showDepartureSuggestions && departureSuggestions.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                  {departureSuggestions.map((port) => (
-                    <div
-                      key={port}
-                      className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handlePortSelect(port, 'departure')}
-                    >
-                      {port}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <Label htmlFor="route_origin">Origin Port</Label>
+            <Input
+              id="route_origin"
+              name="route_origin"
+              value={formData.route_origin}
+              onChange={handleChange}
+              placeholder="e.g. Shanghai"
+              required
+            />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="departureCountry">Departure Country</Label>
+            <Label htmlFor="route_destination">Destination Port</Label>
             <Input
-              id="departureCountry"
-              name="departureCountry"
-              value={formData.departureCountry}
+              id="route_destination"
+              name="route_destination"
+              value={formData.route_destination}
               onChange={handleChange}
-              placeholder="e.g. China"
+              placeholder="e.g. Rotterdam"
               required
             />
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="destinationPort">Destination Port</Label>
-            <div className="relative">
-              <Input
-                id="destinationPort"
-                name="destinationPort"
-                value={formData.destinationPort}
-                onChange={handleChange}
-                onFocus={() => setShowDestinationSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowDestinationSuggestions(false), 200)}
-                placeholder="e.g. Rotterdam"
-                required
-              />
-              {showDestinationSuggestions && destinationSuggestions.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                  {destinationSuggestions.map((port) => (
-                    <div
-                      key={port}
-                      className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handlePortSelect(port, 'destination')}
-                    >
-                      {port}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="destinationCountry">Destination Country</Label>
-            <Input
-              id="destinationCountry"
-              name="destinationCountry"
-              value={formData.destinationCountry}
-              onChange={handleChange}
-              placeholder="e.g. Netherlands"
-              required
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="route_distance">Route Distance (km)</Label>
+          <Input
+            id="route_distance"
+            name="route_distance"
+            type="number"
+            min="1"
+            value={formData.route_distance}
+            onChange={handleChange}
+            placeholder="e.g. 12000"
+            required
+          />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -273,12 +173,12 @@ const ListingForm: React.FC = () => {
                   variant={"outline"}
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !formData.departureDate && "text-muted-foreground"
+                    !formData.departure_date && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.departureDate ? (
-                    format(formData.departureDate, "PPP")
+                  {formData.departure_date ? (
+                    format(formData.departure_date, "PPP")
                   ) : (
                     <span>Select date</span>
                   )}
@@ -287,9 +187,10 @@ const ListingForm: React.FC = () => {
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.departureDate}
-                  onSelect={(date) => setFormData(prev => ({ ...prev, departureDate: date }))}
+                  selected={formData.departure_date}
+                  onSelect={(date) => setFormData(prev => ({ ...prev, departure_date: date }))}
                   initialFocus
+                  disabled={(date) => date < new Date()}
                 />
               </PopoverContent>
             </Popover>
@@ -303,12 +204,12 @@ const ListingForm: React.FC = () => {
                   variant={"outline"}
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !formData.deliveryDate && "text-muted-foreground"
+                    !formData.delivery_date && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.deliveryDate ? (
-                    format(formData.deliveryDate, "PPP")
+                  {formData.delivery_date ? (
+                    format(formData.delivery_date, "PPP")
                   ) : (
                     <span>Select date</span>
                   )}
@@ -317,11 +218,11 @@ const ListingForm: React.FC = () => {
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.deliveryDate}
-                  onSelect={(date) => setFormData(prev => ({ ...prev, deliveryDate: date }))}
+                  selected={formData.delivery_date}
+                  onSelect={(date) => setFormData(prev => ({ ...prev, delivery_date: date }))}
                   initialFocus
                   disabled={(date) => 
-                    formData.departureDate ? date < formData.departureDate : false
+                    formData.departure_date ? date <= formData.departure_date : date <= new Date()
                   }
                 />
               </PopoverContent>
@@ -331,14 +232,14 @@ const ListingForm: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="pricePerTon">Price Per Ton (USD)</Label>
+            <Label htmlFor="price_per_ton">Price Per Ton (USD)</Label>
             <Input
-              id="pricePerTon"
-              name="pricePerTon"
+              id="price_per_ton"
+              name="price_per_ton"
               type="number"
               min="0"
               step="0.01"
-              value={formData.pricePerTon}
+              value={formData.price_per_ton}
               onChange={handleChange}
               placeholder="e.g. 250.00"
               required
@@ -346,14 +247,13 @@ const ListingForm: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="availableTons">Available Capacity (tons)</Label>
+            <Label htmlFor="capacity">Capacity (tons)</Label>
             <Input
-              id="availableTons"
-              name="availableTons"
+              id="capacity"
+              name="capacity"
               type="number"
-              min="0"
-              step="0.01"
-              value={formData.availableTons}
+              min="1"
+              value={formData.capacity}
               onChange={handleChange}
               placeholder="e.g. 500"
               required
@@ -370,29 +270,6 @@ const ListingForm: React.FC = () => {
             onChange={handleChange}
             placeholder="Provide details about the shipping service..."
             rows={4}
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="vesselDetails">Vessel Details (optional)</Label>
-          <Input
-            id="vesselDetails"
-            name="vesselDetails"
-            value={formData.vesselDetails}
-            onChange={handleChange}
-            placeholder="e.g. Container Ship, Bulk Carrier"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="additionalServices">Additional Services (comma separated, optional)</Label>
-          <Input
-            id="additionalServices"
-            name="additionalServices"
-            value={formData.additionalServices}
-            onChange={handleChange}
-            placeholder="e.g. Customs Clearance, Insurance, Last Mile Delivery"
           />
         </div>
       </div>
