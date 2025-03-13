@@ -8,8 +8,10 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import MediatorDashboard from "./pages/MediatorDashboard";
+import CustomerDashboard from "./pages/CustomerDashboard";
 import NotFound from "./pages/NotFound";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
@@ -67,8 +69,10 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/mediator" element={<MediatorDashboard />} />
+              <Route path="/customer" element={<CustomerDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
