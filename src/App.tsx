@@ -33,6 +33,18 @@ const App = () => {
           console.log('Successfully connected to Supabase');
           toast.success('Connected to Supabase');
           setSupabaseInitialized(true);
+          
+          // Create admin user
+          try {
+            const { data: adminData, error: adminError } = await supabase.functions.invoke('create-admin');
+            if (adminError) {
+              console.error('Failed to create admin user:', adminError);
+            } else {
+              console.log('Admin user info:', adminData);
+            }
+          } catch (adminError) {
+            console.error('Error invoking create-admin function:', adminError);
+          }
         }
       } catch (error) {
         console.error('Supabase initialization error:', error);
