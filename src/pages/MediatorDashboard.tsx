@@ -35,12 +35,14 @@ const MediatorDashboard = () => {
   }, [user, navigate]);
 
   const fetchMediatorListings = async () => {
+    if (!user) return;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('listings')
         .select('*')
-        .eq('mediator_id', user?.id);
+        .eq('mediator_id', user.id);
 
       if (error) throw error;
       setListings(data || []);

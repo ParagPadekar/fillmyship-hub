@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      listings: {
+        Row: {
+          capacity: number
+          created_at: string
+          delivery_date: string
+          departure_date: string
+          description: string | null
+          id: string
+          mediator_id: string
+          mediator_name: string
+          price_per_ton: number
+          route_destination: string
+          route_distance: number
+          route_origin: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          capacity: number
+          created_at?: string
+          delivery_date: string
+          departure_date: string
+          description?: string | null
+          id?: string
+          mediator_id: string
+          mediator_name: string
+          price_per_ton: number
+          route_destination: string
+          route_distance: number
+          route_origin: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          delivery_date?: string
+          departure_date?: string
+          description?: string | null
+          id?: string
+          mediator_id?: string
+          mediator_name?: string
+          price_per_ton?: number
+          route_destination?: string
+          route_distance?: number
+          route_origin?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null

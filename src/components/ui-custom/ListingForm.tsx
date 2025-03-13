@@ -76,7 +76,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
     
     try {
       const listingData = {
-        mediator_id: user.id,
+        mediator_id: user.id, // This is already a UUID
         mediator_name: user.company || user.username,
         title: formData.title,
         route_origin: formData.route_origin,
@@ -97,6 +97,19 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
       if (error) throw error;
       
       toast.success('Listing created successfully and pending review');
+      
+      // Reset form
+      setFormData({
+        title: '',
+        route_origin: '',
+        route_destination: '',
+        route_distance: '',
+        departure_date: undefined,
+        delivery_date: undefined,
+        price_per_ton: '',
+        capacity: '',
+        description: '',
+      });
       
       if (onClose) {
         onClose();
