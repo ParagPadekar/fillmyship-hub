@@ -8,7 +8,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, CheckCircle, XCircle, Users, Ship, AlertTriangle } from 'lucide-react';
+import { 
+  BarChart, 
+  CheckCircle, 
+  XCircle, 
+  Users, 
+  Ship, 
+  AlertTriangle,
+  Loader2
+} from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -17,6 +33,7 @@ const AdminDashboard = () => {
   const [pendingListings, setPendingListings] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -33,17 +50,23 @@ const AdminDashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch all listings
+        // Fetch all listings from Supabase
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
           .select('*');
 
-        if (listingsError) throw listingsError;
+        if (listingsError) {
+          console.error('Error fetching listings:', listingsError);
+          throw listingsError;
+        }
+        
+        console.log('Fetched listings:', listingsData);
         const allListings = listingsData || [];
         setListings(allListings);
         
         // Filter pending listings
         const pending = allListings.filter(listing => listing.status === 'pending');
+        console.log('Pending listings:', pending);
         setPendingListings(pending);
 
         // Fetch users
@@ -51,22 +74,27 @@ const AdminDashboard = () => {
           .from('profiles')
           .select('*');
 
-        if (usersError) throw usersError;
+        if (usersError) {
+          console.error('Error fetching users:', usersError);
+          throw usersError;
+        }
+        
         setUsers(usersData || []);
 
       } catch (error) {
-        toast.error('Failed to fetch data');
         console.error('Error fetching admin data:', error);
+        toast.error('Failed to fetch data');
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [user, navigate]);
+  }, [user, navigate, refreshTrigger]);
 
   const handleApproveListing = async (id) => {
     try {
+      setLoading(true);
       const { error } = await supabase
         .from('listings')
         .update({ status: 'approved' })
@@ -76,22 +104,19 @@ const AdminDashboard = () => {
       
       toast.success('Listing approved');
       
-      // Update local state
-      setListings(prev => 
-        prev.map(listing => 
-          listing.id === id ? { ...listing, status: 'approved' } : listing
-        )
-      );
-      
-      setPendingListings(prev => prev.filter(listing => listing.id !== id));
+      // Trigger a refresh to update the listings
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
-      toast.error('Failed to approve listing');
       console.error('Error approving listing:', error);
+      toast.error('Failed to approve listing');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRejectListing = async (id) => {
     try {
+      setLoading(true);
       const { error } = await supabase
         .from('listings')
         .update({ status: 'rejected' })
@@ -101,17 +126,13 @@ const AdminDashboard = () => {
       
       toast.success('Listing rejected');
       
-      // Update local state
-      setListings(prev => 
-        prev.map(listing => 
-          listing.id === id ? { ...listing, status: 'rejected' } : listing
-        )
-      );
-      
-      setPendingListings(prev => prev.filter(listing => listing.id !== id));
+      // Trigger a refresh to update the listings
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
-      toast.error('Failed to reject listing');
       console.error('Error rejecting listing:', error);
+      toast.error('Failed to reject listing');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -120,7 +141,8 @@ const AdminDashboard = () => {
       <Layout>
         <div className="container py-12">
           <div className="flex items-center justify-center h-64">
-            <p className="text-lg">Loading...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-2 text-lg">Loading data...</p>
           </div>
         </div>
       </Layout>
@@ -207,55 +229,53 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 {pendingListings.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-4">Title</th>
-                          <th className="text-left py-3 px-4">Mediator</th>
-                          <th className="text-left py-3 px-4">Route</th>
-                          <th className="text-left py-3 px-4">Departure</th>
-                          <th className="text-left py-3 px-4">Price/Ton</th>
-                          <th className="text-right py-3 px-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pendingListings.map((listing) => (
-                          <tr key={listing.id} className="border-b hover:bg-muted/50">
-                            <td className="py-3 px-4">{listing.title}</td>
-                            <td className="py-3 px-4">{listing.mediator_name}</td>
-                            <td className="py-3 px-4">
-                              {listing.route_origin} to {listing.route_destination}
-                            </td>
-                            <td className="py-3 px-4">
-                              {new Date(listing.departure_date).toLocaleDateString()}
-                            </td>
-                            <td className="py-3 px-4">${listing.price_per_ton}</td>
-                            <td className="py-3 px-4 text-right space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
-                                onClick={() => handleApproveListing(listing.id)}
-                              >
-                                <CheckCircle className="mr-1 h-4 w-4" />
-                                Approve
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
-                                onClick={() => handleRejectListing(listing.id)}
-                              >
-                                <XCircle className="mr-1 h-4 w-4" />
-                                Reject
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Mediator</TableHead>
+                        <TableHead>Route</TableHead>
+                        <TableHead>Departure</TableHead>
+                        <TableHead>Price/Ton</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingListings.map((listing) => (
+                        <TableRow key={listing.id}>
+                          <TableCell className="font-medium">{listing.title}</TableCell>
+                          <TableCell>{listing.mediator_name}</TableCell>
+                          <TableCell>
+                            {listing.route_origin} to {listing.route_destination}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(listing.departure_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>${listing.price_per_ton}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
+                              onClick={() => handleApproveListing(listing.id)}
+                            >
+                              <CheckCircle className="mr-1 h-4 w-4" />
+                              Approve
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                              onClick={() => handleRejectListing(listing.id)}
+                            >
+                              <XCircle className="mr-1 h-4 w-4" />
+                              Reject
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 space-y-3">
                     <CheckCircle className="h-12 w-12 text-green-500" />
@@ -277,32 +297,30 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 {users.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-4">Username</th>
-                          <th className="text-left py-3 px-4">Email</th>
-                          <th className="text-left py-3 px-4">Role</th>
-                          <th className="text-left py-3 px-4">Company</th>
-                          <th className="text-right py-3 px-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users.map((user) => (
-                          <tr key={user.id} className="border-b hover:bg-muted/50">
-                            <td className="py-3 px-4">{user.username}</td>
-                            <td className="py-3 px-4">{user.email}</td>
-                            <td className="py-3 px-4">{user.role || 'customer'}</td>
-                            <td className="py-3 px-4">{user.company || '-'}</td>
-                            <td className="py-3 px-4 text-right">
-                              <Button variant="outline" size="sm">Edit</Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.username}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{user.role || 'customer'}</TableCell>
+                          <TableCell>{user.company || '-'}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm">Edit</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 ) : (
                   <p className="text-center py-4">No users found</p>
                 )}
@@ -320,43 +338,41 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 {listings.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-4">Title</th>
-                          <th className="text-left py-3 px-4">Mediator</th>
-                          <th className="text-left py-3 px-4">Status</th>
-                          <th className="text-left py-3 px-4">Price/Ton</th>
-                          <th className="text-right py-3 px-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {listings.map((listing) => (
-                          <tr key={listing.id} className="border-b hover:bg-muted/50">
-                            <td className="py-3 px-4">{listing.title}</td>
-                            <td className="py-3 px-4">{listing.mediator_name}</td>
-                            <td className="py-3 px-4">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                listing.status === 'approved' 
-                                ? 'bg-green-100 text-green-800' 
-                                : listing.status === 'rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {listing.status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">${listing.price_per_ton}</td>
-                            <td className="py-3 px-4 text-right">
-                              <Button variant="outline" size="sm" className="mr-2">View</Button>
-                              <Button variant="outline" size="sm">Edit</Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Mediator</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Price/Ton</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {listings.map((listing) => (
+                        <TableRow key={listing.id}>
+                          <TableCell className="font-medium">{listing.title}</TableCell>
+                          <TableCell>{listing.mediator_name}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              listing.status === 'approved' 
+                              ? 'bg-green-100 text-green-800' 
+                              : listing.status === 'rejected'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {listing.status}
+                            </span>
+                          </TableCell>
+                          <TableCell>${listing.price_per_ton}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm" className="mr-2">View</Button>
+                            <Button variant="outline" size="sm">Edit</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 ) : (
                   <p className="text-center py-4">No listings found</p>
                 )}

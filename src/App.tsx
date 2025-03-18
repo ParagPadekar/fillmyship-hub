@@ -20,7 +20,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import { toast } from "sonner";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => {
   const [supabaseInitialized, setSupabaseInitialized] = useState(false);
