@@ -14,6 +14,7 @@ import MediatorDashboard from "./pages/MediatorDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import Profile from "./pages/Profile";
 import Listings from "./pages/Listings";
+import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
@@ -77,6 +78,7 @@ const App = () => {
               <Route path="/customer" element={<CustomerDashboard />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/listings" element={<Listings />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
