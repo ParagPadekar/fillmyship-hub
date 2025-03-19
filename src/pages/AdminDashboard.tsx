@@ -15,7 +15,8 @@ import {
   Users, 
   Ship, 
   AlertTriangle,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import {
   Table,
@@ -50,6 +51,8 @@ const AdminDashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.log('Admin Dashboard: Fetching all listings from Supabase...');
+        
         // Fetch all listings from Supabase
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
@@ -60,13 +63,13 @@ const AdminDashboard = () => {
           throw listingsError;
         }
         
-        console.log('Fetched listings:', listingsData);
+        console.log('Admin Dashboard: Fetched listings:', listingsData);
         const allListings = listingsData || [];
         setListings(allListings);
         
         // Filter pending listings
         const pending = allListings.filter(listing => listing.status === 'pending');
-        console.log('Pending listings:', pending);
+        console.log('Admin Dashboard: Pending listings:', pending);
         setPendingListings(pending);
 
         // Fetch users
@@ -92,15 +95,25 @@ const AdminDashboard = () => {
     fetchData();
   }, [user, navigate, refreshTrigger]);
 
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+    toast.info('Refreshing data...');
+  };
+
   const handleApproveListing = async (id) => {
     try {
       setLoading(true);
+      console.log('Approving listing with ID:', id);
+      
       const { error } = await supabase
         .from('listings')
         .update({ status: 'approved' })
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error approving listing:', error);
+        throw error;
+      }
       
       toast.success('Listing approved');
       
@@ -117,12 +130,17 @@ const AdminDashboard = () => {
   const handleRejectListing = async (id) => {
     try {
       setLoading(true);
+      console.log('Rejecting listing with ID:', id);
+      
       const { error } = await supabase
         .from('listings')
         .update({ status: 'rejected' })
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error rejecting listing:', error);
+        throw error;
+      }
       
       toast.success('Listing rejected');
       
@@ -154,6 +172,10 @@ const AdminDashboard = () => {
       <div className="container py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh Data
+          </Button>
         </div>
 
         <Tabs defaultValue={pendingListings.length > 0 ? "pending" : "overview"} className="w-full">

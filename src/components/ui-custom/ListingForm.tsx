@@ -1,96 +1,74 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
 
-interface ListingFormProps {
-  onClose?: () => void;
-}
-
-const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
+const ListingForm = ({ onClose }) => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    title: '',
-    route_origin: '',
-    route_destination: '',
-    route_distance: '',
-    departure_date: undefined as Date | undefined,
-    delivery_date: undefined as Date | undefined,
-    price_per_ton: '',
-    capacity: '',
-    description: '',
-  });
-
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [title, setTitle] = useState('');
+  const [routeOrigin, setRouteOrigin] = useState('');
+  const [routeDestination, setRouteDestination] = useState('');
+  const [departureDate, setDepartureDate] = useState<Date | undefined>();
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>();
+  const [pricePerTon, setPricePerTon] = useState('');
+  const [capacity, setCapacity] = useState('');
+  const [description, setDescription] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!user) {
-      toast.error('You must be logged in to create a listing');
-      return;
-    }
-    
-    if (user.role !== 'mediator' && user.role !== 'admin') {
-      toast.error('Only mediators can create listings');
-      return;
-    }
-    
-    if (
-      !formData.title ||
-      !formData.route_origin ||
-      !formData.route_destination ||
-      !formData.route_distance ||
-      !formData.departure_date ||
-      !formData.delivery_date ||
-      !formData.price_per_ton ||
-      !formData.capacity
-    ) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-    
-    if (formData.departure_date && formData.delivery_date && 
-        formData.delivery_date <= formData.departure_date) {
-      toast.error('Delivery date must be after departure date');
+      toast.error("You must be logged in to create a listing");
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      console.log('Creating listing with user ID:', user.id);
-      console.log('User object:', user);
+      // Get the user's profile to include the name
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('username, company')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        throw profileError;
+      }
+      
+      const mediatorName = profileData.company || profileData.username || user.email;
+      
+      console.log('Creating listing with mediator details:', {
+        mediatorId: user.id,
+        mediatorName
+      });
+      
+      // Calculate route distance (mock calculation for demonstration)
+      const routeDistance = Math.floor(Math.random() * 1000) + 100;
       
       const listingData = {
-        mediator_id: user.id, // This should be a UUID
-        mediator_name: user.company || user.username,
-        title: formData.title,
-        route_origin: formData.route_origin,
-        route_destination: formData.route_destination,
-        route_distance: parseInt(formData.route_distance),
-        departure_date: formData.departure_date,
-        delivery_date: formData.delivery_date,
-        price_per_ton: parseFloat(formData.price_per_ton),
-        capacity: parseInt(formData.capacity),
-        description: formData.description || null,
-        status: 'pending' // All new listings start as pending
+        title,
+        mediator_id: user.id,
+        mediator_name: mediatorName,
+        route_origin: routeOrigin,
+        route_destination: routeDestination,
+        route_distance: routeDistance,
+        departure_date: departureDate,
+        delivery_date: deliveryDate,
+        price_per_ton: Number(pricePerTon),
+        capacity: Number(capacity),
+        description,
+        status: 'pending'
       };
       
       console.log('Submitting listing data:', listingData);
@@ -101,204 +79,147 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         .select();
       
       if (error) {
-        console.error('Supabase error details:', error);
+        console.error('Error creating listing:', error);
         throw error;
       }
       
       console.log('Listing created successfully:', data);
-      toast.success('Listing created successfully and pending review');
       
-      // Reset form
-      setFormData({
-        title: '',
-        route_origin: '',
-        route_destination: '',
-        route_distance: '',
-        departure_date: undefined,
-        delivery_date: undefined,
-        price_per_ton: '',
-        capacity: '',
-        description: '',
-      });
-      
-      if (onClose) {
-        onClose();
-      }
-    } catch (error: any) {
-      console.error('Error creating listing:', error);
-      toast.error(error.message || 'Failed to create listing');
+      toast.success('Listing created successfully');
+      onClose();
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      toast.error('Failed to create listing: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Cargo from Shanghai to Rotterdam"
+          required
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="title">Listing Title</Label>
+          <Label htmlFor="routeOrigin">Origin Port</Label>
           <Input
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="e.g. Direct shipping from Shanghai to Rotterdam"
+            id="routeOrigin"
+            type="text"
+            value={routeOrigin}
+            onChange={(e) => setRouteOrigin(e.target.value)}
+            placeholder="Shanghai"
             required
           />
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="route_origin">Origin Port</Label>
-            <Input
-              id="route_origin"
-              name="route_origin"
-              value={formData.route_origin}
-              onChange={handleChange}
-              placeholder="e.g. Shanghai"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="route_destination">Destination Port</Label>
-            <Input
-              id="route_destination"
-              name="route_destination"
-              value={formData.route_destination}
-              onChange={handleChange}
-              placeholder="e.g. Rotterdam"
-              required
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="route_distance">Route Distance (km)</Label>
+        <div>
+          <Label htmlFor="routeDestination">Destination Port</Label>
           <Input
-            id="route_distance"
-            name="route_distance"
-            type="number"
-            min="1"
-            value={formData.route_distance}
-            onChange={handleChange}
-            placeholder="e.g. 12000"
+            id="routeDestination"
+            type="text"
+            value={routeDestination}
+            onChange={(e) => setRouteDestination(e.target.value)}
+            placeholder="Rotterdam"
             required
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Departure Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.departure_date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.departure_date ? (
-                    format(formData.departure_date, "PPP")
-                  ) : (
-                    <span>Select date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.departure_date}
-                  onSelect={(date) => setFormData(prev => ({ ...prev, departure_date: date }))}
-                  initialFocus
-                  disabled={(date) => date < new Date()}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Delivery Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.delivery_date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.delivery_date ? (
-                    format(formData.delivery_date, "PPP")
-                  ) : (
-                    <span>Select date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.delivery_date}
-                  onSelect={(date) => setFormData(prev => ({ ...prev, delivery_date: date }))}
-                  initialFocus
-                  disabled={(date) => 
-                    formData.departure_date ? date <= formData.departure_date : date <= new Date()
-                  }
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="price_per_ton">Price Per Ton (USD)</Label>
-            <Input
-              id="price_per_ton"
-              name="price_per_ton"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.price_per_ton}
-              onChange={handleChange}
-              placeholder="e.g. 250.00"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="capacity">Capacity (tons)</Label>
-            <Input
-              id="capacity"
-              name="capacity"
-              type="number"
-              min="1"
-              value={formData.capacity}
-              onChange={handleChange}
-              placeholder="e.g. 500"
-              required
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="description">Listing Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Provide details about the shipping service..."
-            rows={4}
           />
         </div>
       </div>
-      
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? 'Creating Listing...' : 'Create Listing'}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Departure Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={format(departureDate || new Date(), 'PPP')}
+              >
+                {departureDate ? format(departureDate, "PPP") : <span>Pick a date</span>}
+                <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={departureDate}
+                onSelect={setDepartureDate}
+                disabled={(date) =>
+                  date < new Date()
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div>
+          <Label>Delivery Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={format(deliveryDate || new Date(), 'PPP')}
+              >
+                {deliveryDate ? format(deliveryDate, "PPP") : <span>Pick a date</span>}
+                <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={deliveryDate}
+                onSelect={setDeliveryDate}
+                disabled={(date) =>
+                  date < new Date()
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="pricePerTon">Price per Ton (USD)</Label>
+          <Input
+            id="pricePerTon"
+            type="number"
+            value={pricePerTon}
+            onChange={(e) => setPricePerTon(e.target.value)}
+            placeholder="500"
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="capacity">Capacity (Tons)</Label>
+          <Input
+            id="capacity"
+            type="number"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
+            placeholder="1000"
+            required
+          />
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Detailed description of the cargo and shipping terms"
+          rows={4}
+        />
+      </div>
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Submitting..." : "Create Listing"}
       </Button>
     </form>
   );

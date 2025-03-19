@@ -40,7 +40,7 @@ const MediatorDashboard = () => {
     
     setIsLoading(true);
     try {
-      console.log('Fetching listings for mediator ID:', user.id);
+      console.log('Mediator Dashboard: Fetching listings for mediator ID:', user.id);
       
       const { data, error } = await supabase
         .from('listings')
@@ -52,7 +52,7 @@ const MediatorDashboard = () => {
         throw error;
       }
       
-      console.log('Listings fetched successfully:', data);
+      console.log('Mediator Dashboard: Listings fetched successfully:', data);
       setListings(data || []);
     } catch (error) {
       console.error('Error fetching mediator listings:', error);
@@ -63,7 +63,9 @@ const MediatorDashboard = () => {
   };
 
   const refreshListings = () => {
+    console.log('Mediator Dashboard: Refreshing listings');
     setRefreshTrigger(prev => prev + 1);
+    toast.info('Refreshing listings...');
   };
 
   const getStatusBadgeClass = (status) => {
