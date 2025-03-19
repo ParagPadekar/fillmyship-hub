@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client'; // Update to use the correct client
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -41,15 +41,18 @@ const ListingForm = ({ onClose }) => {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('username, company')
-        .eq('id', user.id)
-        .single();
+        .eq('id', user.id);
       
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        throw profileError;
+      console.log('Profile query response:', profileData, profileError);
+      
+      // Instead of using .single() which throws an error when no profile exists,
+      // we handle the case where the profile might not exist
+      let mediatorName = user.email || 'Unknown';
+      
+      if (profileData && profileData.length > 0) {
+        const profile = profileData[0];
+        mediatorName = profile.company || profile.username || user.email;
       }
-      
-      const mediatorName = profileData.company || profileData.username || user.email;
       
       console.log('Creating listing with mediator details:', {
         mediatorId: user.id,
