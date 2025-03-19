@@ -32,6 +32,11 @@ const ListingForm = ({ onClose }) => {
       return;
     }
     
+    if (!departureDate || !deliveryDate) {
+      toast.error("Please select departure and delivery dates");
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -62,6 +67,10 @@ const ListingForm = ({ onClose }) => {
       // Calculate route distance (mock calculation for demonstration)
       const routeDistance = Math.floor(Math.random() * 1000) + 100;
       
+      // Format dates as ISO strings for Supabase
+      const departureDateStr = departureDate.toISOString();
+      const deliveryDateStr = deliveryDate.toISOString();
+      
       const listingData = {
         title,
         mediator_id: user.id,
@@ -69,8 +78,8 @@ const ListingForm = ({ onClose }) => {
         route_origin: routeOrigin,
         route_destination: routeDestination,
         route_distance: routeDistance,
-        departure_date: departureDate,
-        delivery_date: deliveryDate,
+        departure_date: departureDateStr,
+        delivery_date: deliveryDateStr,
         price_per_ton: Number(pricePerTon),
         capacity: Number(capacity),
         description,
@@ -79,9 +88,10 @@ const ListingForm = ({ onClose }) => {
       
       console.log('Submitting listing data:', listingData);
       
+      // Fix: Pass a single object to insert, not an array wrapped in an object
       const { data, error } = await supabase
         .from('listings')
-        .insert([listingData])
+        .insert(listingData)
         .select();
       
       if (error) {
@@ -145,7 +155,7 @@ const ListingForm = ({ onClose }) => {
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
-                className={format(departureDate || new Date(), 'PPP')}
+                className={departureDate ? format(departureDate, 'PPP') : undefined}
               >
                 {departureDate ? format(departureDate, "PPP") : <span>Pick a date</span>}
                 <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
@@ -170,7 +180,7 @@ const ListingForm = ({ onClose }) => {
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
-                className={format(deliveryDate || new Date(), 'PPP')}
+                className={deliveryDate ? format(deliveryDate, 'PPP') : undefined}
               >
                 {deliveryDate ? format(deliveryDate, "PPP") : <span>Pick a date</span>}
                 <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
