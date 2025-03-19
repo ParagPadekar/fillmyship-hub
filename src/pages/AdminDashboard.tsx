@@ -53,7 +53,7 @@ const AdminDashboard = () => {
       try {
         console.log('Admin Dashboard: Fetching all listings from Supabase...');
         
-        // Fetch all listings from Supabase
+        // Fetch all listings - using the client imported from integrations instead
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
           .select('*');

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -34,6 +35,8 @@ const ListingForm = ({ onClose }) => {
     setIsSubmitting(true);
     
     try {
+      console.log('Creating listing with user ID:', user.id);
+      
       // Get the user's profile to include the name
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
