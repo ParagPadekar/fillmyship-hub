@@ -6,7 +6,7 @@ import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, ListFilter, ShipIcon } from 'lucide-react';
+import { Plus, ListFilter, ShipIcon, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -18,6 +18,7 @@ const MediatorDashboard = () => {
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -32,19 +33,26 @@ const MediatorDashboard = () => {
     }
 
     fetchMediatorListings();
-  }, [user, navigate]);
+  }, [user, navigate, refreshTrigger]);
 
   const fetchMediatorListings = async () => {
     if (!user) return;
     
     setIsLoading(true);
     try {
+      console.log('Fetching listings for mediator ID:', user.id);
+      
       const { data, error } = await supabase
         .from('listings')
         .select('*')
         .eq('mediator_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
+      
+      console.log('Listings fetched successfully:', data);
       setListings(data || []);
     } catch (error) {
       console.error('Error fetching mediator listings:', error);
@@ -52,6 +60,10 @@ const MediatorDashboard = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const refreshListings = () => {
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const getStatusBadgeClass = (status) => {
@@ -71,7 +83,7 @@ const MediatorDashboard = () => {
 
   const handleDialogClose = () => {
     setIsDialogOpen(false);
-    fetchMediatorListings(); // Refresh listings after form is closed
+    refreshListings(); // Refresh listings after form is closed
   };
 
   return (
@@ -79,10 +91,16 @@ const MediatorDashboard = () => {
       <div className="container py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Mediator Dashboard</h1>
-          <Button onClick={handleCreateListing}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Listing
-          </Button>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={refreshListings}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <Button onClick={handleCreateListing}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Listing
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="myListings" className="w-full">
@@ -95,11 +113,20 @@ const MediatorDashboard = () => {
 
           <TabsContent value="myListings">
             <Card>
-              <CardHeader>
-                <CardTitle>My Listings</CardTitle>
-                <CardDescription>
-                  Manage your shipping listings
-                </CardDescription>
+              <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-center">
+                <div>
+                  <CardTitle>My Listings</CardTitle>
+                  <CardDescription>
+                    Manage your shipping listings
+                  </CardDescription>
+                </div>
+                {user && (
+                  <div className="mt-4 sm:mt-0">
+                    <div className="text-sm text-muted-foreground">
+                      Mediator ID: <span className="font-mono text-xs">{user.id}</span>
+                    </div>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 {isLoading ? (

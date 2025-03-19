@@ -36,7 +36,13 @@ const App = () => {
     // Test Supabase connection
     const checkSupabaseConnection = async () => {
       try {
-        const { data, error } = await supabase.from('profiles').select('*').limit(1);
+        console.log('Checking Supabase connection...');
+        console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .limit(1);
         
         if (error && error.code !== 'PGRST116') {
           // PGRST116 is "relation does not exist" which is expected if the table doesn't exist
@@ -46,6 +52,22 @@ const App = () => {
           console.log('Successfully connected to Supabase');
           toast.success('Connected to Supabase');
           setSupabaseInitialized(true);
+          
+          // Check listings table exists
+          try {
+            const { data: listingsData, error: listingsError } = await supabase
+              .from('listings')
+              .select('count')
+              .limit(1);
+              
+            if (listingsError && listingsError.code !== 'PGRST116') {
+              console.error('Error checking listings table:', listingsError);
+            } else {
+              console.log('Listings table check:', listingsData);
+            }
+          } catch (listingsError) {
+            console.error('Error checking listings table:', listingsError);
+          }
           
           // Create admin user
           try {

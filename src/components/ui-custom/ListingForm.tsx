@@ -75,8 +75,11 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
     setIsSubmitting(true);
     
     try {
+      console.log('Creating listing with user ID:', user.id);
+      console.log('User object:', user);
+      
       const listingData = {
-        mediator_id: user.id, // This is already a UUID
+        mediator_id: user.id, // This should be a UUID
         mediator_name: user.company || user.username,
         title: formData.title,
         route_origin: formData.route_origin,
@@ -90,12 +93,19 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         status: 'pending' // All new listings start as pending
       };
       
-      const { error } = await supabase
+      console.log('Submitting listing data:', listingData);
+      
+      const { data, error } = await supabase
         .from('listings')
-        .insert([listingData]);
+        .insert([listingData])
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
       
+      console.log('Listing created successfully:', data);
       toast.success('Listing created successfully and pending review');
       
       // Reset form
@@ -115,8 +125,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         onClose();
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create listing');
       console.error('Error creating listing:', error);
+      toast.error(error.message || 'Failed to create listing');
     } finally {
       setIsSubmitting(false);
     }
