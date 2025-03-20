@@ -50,18 +50,31 @@ const Login = () => {
 
   const onSubmit = async (data: LoginValues) => {
     setIsLoading(true);
+    
     try {
-      // Use the login function from AuthContext instead of direct Supabase access
+      // First try to login directly with Supabase to handle immediate errors
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // If direct login worked, use the AuthContext login to properly set up the context
       await login(data.email, data.password);
       
-      // Navigate after successful login - AuthContext will handle setting the user
       toast.success('Logged in successfully');
-      navigate('/dashboard');
+      
+      // Add a small delay to ensure context is updated before navigating
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
       
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || 'Failed to log in');
-    } finally {
       setIsLoading(false);
     }
   };
