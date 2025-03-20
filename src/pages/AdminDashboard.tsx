@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,7 +53,7 @@ const AdminDashboard = () => {
       try {
         console.log('Admin Dashboard: Fetching all listings from Supabase...');
         
-        // Fetch all listings - using the client imported from integrations instead
+        // Fetch all listings - using the correct supabase client
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
           .select('*');
@@ -72,7 +72,7 @@ const AdminDashboard = () => {
         console.log('Admin Dashboard: Pending listings:', pending);
         setPendingListings(pending);
 
-        // Fetch users
+        // Fetch users - use profiles table instead of directly querying auth.users
         const { data: usersData, error: usersError } = await supabase
           .from('profiles')
           .select('*');
@@ -82,6 +82,7 @@ const AdminDashboard = () => {
           throw usersError;
         }
         
+        console.log('Admin Dashboard: Fetched users:', usersData);
         setUsers(usersData || []);
 
       } catch (error) {
