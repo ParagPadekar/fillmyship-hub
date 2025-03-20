@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 const Login = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth(); // Use login from auth context
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -49,18 +51,15 @@ const Login = () => {
   const onSubmit = async (data: LoginValues) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (error) throw error;
-
-      toast.success('Logged in successfully');
+      // Use the login function from AuthContext instead of direct Supabase access
+      await login(data.email, data.password);
       
-      // Redirect to dashboard which will handle role-specific routing
+      // Navigate after successful login - AuthContext will handle setting the user
+      toast.success('Logged in successfully');
       navigate('/dashboard');
+      
     } catch (error: any) {
+      console.error('Login error:', error);
       toast.error(error.message || 'Failed to log in');
     } finally {
       setIsLoading(false);
@@ -119,6 +118,20 @@ const Login = () => {
               <Link to="/signup" className="text-primary hover:underline">
                 Sign up
               </Link>
+            </div>
+            {/* Add a way to quickly login as admin for testing */}
+            <div className="text-xs text-center text-gray-400 pt-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs"
+                onClick={() => {
+                  form.setValue('email', 'admin@fillmyship.com');
+                  form.setValue('password', 'Admin@123456');
+                }}
+              >
+                Use Admin Credentials
+              </Button>
             </div>
           </CardFooter>
         </Card>
