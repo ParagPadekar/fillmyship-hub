@@ -17,44 +17,30 @@ const Dashboard = () => {
       return;
     }
 
-    // No need to redirect admin to a different page,
-    // just use the role-specific dashboard routes for customer and mediator
+    // Redirect users based on role
     switch (user.role) {
+      case 'admin':
+        navigate('/admin');
+        break;
       case 'mediator':
         navigate('/mediator');
         break;
       case 'customer':
         navigate('/customer');
         break;
-      // For admin, we'll stay on this component and render the admin dashboard
-      // This way, Dashboard and Admin Panel can be different pages
+      default:
+        // Fallback for any unknown role
+        toast.error('Unknown user role');
+        navigate('/');
     }
   }, [user, isLoading, navigate]);
 
-  // If we're an admin and we didn't redirect, show loading or redirect manually
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-4">Loading your dashboard...</h2>
-          <p className="text-muted-foreground">Please wait while we prepare your dashboard</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If user is admin, we can either show the admin dashboard here or redirect to admin page
-  if (user && user.role === 'admin') {
-    navigate('/admin');
-    return null;
-  }
-
-  // This should typically not be shown as we either redirect or show loading
+  // Show loading state while authentication is in progress
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold mb-4">Redirecting to your dashboard...</h2>
-        <p className="text-muted-foreground">Please wait</p>
+        <h2 className="text-2xl font-semibold mb-4">Loading your dashboard...</h2>
+        <p className="text-muted-foreground">Please wait while we prepare your dashboard</p>
       </div>
     </div>
   );
