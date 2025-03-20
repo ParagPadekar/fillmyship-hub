@@ -57,7 +57,9 @@ const Login = () => {
       if (error) throw error;
 
       toast.success('Logged in successfully');
-      navigate('/');
+      
+      // Redirect to dashboard which will handle role-specific routing
+      navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'Failed to log in');
     } finally {
