@@ -72,18 +72,18 @@ const AdminDashboard = () => {
         console.log('Admin Dashboard: Pending listings:', pending);
         setPendingListings(pending);
 
-        // Fetch users - use profiles table instead of directly querying auth.users
-        const { data: usersData, error: usersError } = await supabase
+        // Fetch users from the profiles table instead of users table
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
 
-        if (usersError) {
-          console.error('Error fetching users:', usersError);
-          throw usersError;
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          throw profilesError;
         }
         
-        console.log('Admin Dashboard: Fetched users:', usersData);
-        setUsers(usersData || []);
+        console.log('Admin Dashboard: Fetched profiles:', profilesData);
+        setUsers(profilesData || []);
 
       } catch (error) {
         console.error('Error fetching admin data:', error);
@@ -334,7 +334,7 @@ const AdminDashboard = () => {
                       {users.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell className="font-medium">{user.username}</TableCell>
-                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{user.email || '-'}</TableCell>
                           <TableCell>{user.role || 'customer'}</TableCell>
                           <TableCell>{user.company || '-'}</TableCell>
                           <TableCell className="text-right">
