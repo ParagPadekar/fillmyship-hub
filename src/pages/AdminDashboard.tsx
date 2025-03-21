@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
   const [pendingListings, setPendingListings] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
@@ -50,43 +52,50 @@ const AdminDashboard = () => {
 
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
         console.log('Admin Dashboard: Fetching all listings from Supabase...');
         
-        // Fetch all listings - using the correct supabase client
+        // Fetch all listings - using the Supabase client from integrations
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
           .select('*');
 
         if (listingsError) {
           console.error('Error fetching listings:', listingsError);
-          throw listingsError;
+          setError(`Failed to fetch listings: ${listingsError.message}`);
+          setListings([]);
+          setPendingListings([]);
+        } else {
+          console.log('Admin Dashboard: Fetched listings:', listingsData);
+          const allListings = listingsData || [];
+          setListings(allListings);
+          
+          // Filter pending listings
+          const pending = allListings.filter(listing => listing.status === 'pending');
+          console.log('Admin Dashboard: Pending listings:', pending);
+          setPendingListings(pending);
         }
-        
-        console.log('Admin Dashboard: Fetched listings:', listingsData);
-        const allListings = listingsData || [];
-        setListings(allListings);
-        
-        // Filter pending listings
-        const pending = allListings.filter(listing => listing.status === 'pending');
-        console.log('Admin Dashboard: Pending listings:', pending);
-        setPendingListings(pending);
 
-        // Fetch users from the profiles table instead of users table
+        // Fetch users from the profiles table
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
 
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
-          throw profilesError;
+          setError((prevError) => prevError 
+            ? `${prevError}. Also failed to fetch profiles: ${profilesError.message}` 
+            : `Failed to fetch profiles: ${profilesError.message}`);
+          setUsers([]);
+        } else {
+          console.log('Admin Dashboard: Fetched profiles:', profilesData);
+          setUsers(profilesData || []);
         }
-        
-        console.log('Admin Dashboard: Fetched profiles:', profilesData);
-        setUsers(profilesData || []);
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching admin data:', error);
+        setError(`An unexpected error occurred: ${error.message}`);
         toast.error('Failed to fetch data');
       } finally {
         setLoading(false);
@@ -113,6 +122,7 @@ const AdminDashboard = () => {
       
       if (error) {
         console.error('Error approving listing:', error);
+        toast.error(`Failed to approve listing: ${error.message}`);
         throw error;
       }
       
@@ -120,9 +130,9 @@ const AdminDashboard = () => {
       
       // Trigger a refresh to update the listings
       setRefreshTrigger(prev => prev + 1);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving listing:', error);
-      toast.error('Failed to approve listing');
+      toast.error(`Failed to approve listing: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -140,6 +150,7 @@ const AdminDashboard = () => {
       
       if (error) {
         console.error('Error rejecting listing:', error);
+        toast.error(`Failed to reject listing: ${error.message}`);
         throw error;
       }
       
@@ -147,9 +158,9 @@ const AdminDashboard = () => {
       
       // Trigger a refresh to update the listings
       setRefreshTrigger(prev => prev + 1);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting listing:', error);
-      toast.error('Failed to reject listing');
+      toast.error(`Failed to reject listing: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -178,6 +189,20 @@ const AdminDashboard = () => {
             Refresh Data
           </Button>
         </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {error}
+              <p className="mt-2">
+                This may be due to missing permissions on your Supabase tables.
+                Please check that you have proper access to the listings and profiles tables.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue={pendingListings.length > 0 ? "pending" : "overview"} className="w-full">
           <TabsList className="mb-6">
