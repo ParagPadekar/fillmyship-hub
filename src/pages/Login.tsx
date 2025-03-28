@@ -50,7 +50,6 @@ const Login = () => {
 
   const onSubmit = async (data: LoginValues) => {
     setIsLoading(true);
-    
     try {
       // First try to login directly with Supabase to handle immediate errors
       const { data: authData, error } = await supabase.auth.signInWithPassword({

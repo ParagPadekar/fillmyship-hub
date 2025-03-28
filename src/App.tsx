@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import { toast } from "sonner";
+import AdminLogin from "./pages/AdminLogin";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,16 +70,23 @@ const App = () => {
             console.error('Error checking listings table:', listingsError);
           }
           
-          // Create admin user
+          // Check for admin user instead of trying to create one
           try {
-            const { data: adminData, error: adminError } = await supabase.functions.invoke('create-admin');
-            if (adminError) {
-              console.error('Failed to create admin user:', adminError);
+            const { data: adminCheck, error: adminCheckError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('role', 'admin')
+              .limit(1);
+              
+            if (adminCheckError) {
+              console.error('Failed to check for admin user:', adminCheckError);
+            } else if (adminCheck && adminCheck.length > 0) {
+              console.log('Admin user exists');
             } else {
-              console.log('Admin user info:', adminData);
+              console.log('No admin user found - please create one using SQL');
             }
           } catch (adminError) {
-            console.error('Error invoking create-admin function:', adminError);
+            console.error('Error checking admin user:', adminError);
           }
         }
       } catch (error) {
@@ -100,6 +108,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />

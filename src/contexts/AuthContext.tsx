@@ -30,18 +30,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session) {
           // Fetch user profile data
           const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          setUser({
-            id: session.user.id,
-            username: profile?.username || session.user.email?.split('@')[0] || '',
-            email: session.user.email || '',
-            role: session.user.user_metadata.role || 'customer',
-            createdAt: new Date(session.user.created_at),
-            company: profile?.company || session.user.user_metadata.company,
+  .from('profiles')
+  .select('*')
+  .eq('id', session.user.id)
+  .single();
+
+setUser({
+  id: session.user.id,
+  username: profile?.username || session.user.email?.split('@')[0] || '',
+  email: session.user.email || '',
+  // Try to get role from profile first, then from user metadata as fallback
+  role: profile?.role || session.user.user_metadata.role || 'customer',
+  createdAt: new Date(session.user.created_at),
+  company: profile?.company || session.user.user_metadata.company,
           });
         } else {
           setUser(null);
@@ -117,7 +118,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           },
         },
       });
-
+  
       if (error) throw error;
       
       toast.success('Signup successful. Please check your email to confirm your account.');

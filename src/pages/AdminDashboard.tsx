@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,14 +36,40 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [adminUser, setAdminUser] = useState<any>(null);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
+    // Check both regular auth and admin-specific auth
+    const checkAdminAccess = () => {
+      // Check if user is logged in via AuthContext
+      if (user && user.role === 'admin') {
+        return true;
+      }
+      
+      // Check if admin is logged in via local storage
+      const storedAdmin = localStorage.getItem('admin_user');
+      if (storedAdmin) {
+        try {
+          const adminData = JSON.parse(storedAdmin);
+          if (adminData && adminData.role === 'admin') {
+            setAdminUser(adminData);
+            return true;
+          }
+        } catch (e) {
+          console.error('Error parsing admin user data:', e);
+        }
+      }
+      
+      return false;
+    };
+
+    if (!user && !localStorage.getItem('admin_user')) {
+      toast.error('Please log in to access this page');
+      navigate('/admin-login');
       return;
     }
 
-    if (user.role !== 'admin') {
+    if (!checkAdminAccess()) {
       toast.error('Unauthorized access');
       navigate('/');
       return;
@@ -166,6 +191,15 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleLogout = () => {
+    // Clear admin-specific session if it exists
+    if (localStorage.getItem('admin_user')) {
+      localStorage.removeItem('admin_user');
+      toast.success('Admin logged out');
+      navigate('/admin-login');
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -179,15 +213,31 @@ const AdminDashboard = () => {
     );
   }
 
+  const currentUser = user || adminUser;
+
   return (
     <Layout>
       <div className="container py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh Data
-          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            {currentUser && (
+              <p className="text-sm text-muted-foreground">
+                Logged in as: {currentUser.username || currentUser.email} (Admin)
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh Data
+            </Button>
+            {adminUser && (
+              <Button onClick={handleLogout} variant="destructive">
+                Logout
+              </Button>
+            )}
+          </div>
         </div>
 
         {error && (
