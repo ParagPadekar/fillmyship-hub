@@ -26,7 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Ship } from 'lucide-react';
+import { Route, Ship } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -63,14 +63,14 @@ const Login = () => {
 
       // If direct login worked, use the AuthContext login to properly set up the context
       await login(data.email, data.password);
-      
+
       toast.success('Logged in successfully');
-      
+
       // Add a small delay to ensure context is updated before navigating
       setTimeout(() => {
         navigate('/dashboard');
       }, 500);
-      
+
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || 'Failed to log in');
@@ -133,14 +133,15 @@ const Login = () => {
             </div>
             {/* Add a way to quickly login as admin for testing */}
             <div className="text-xs text-center text-gray-400 pt-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-xs"
-                onClick={() => {
-                  form.setValue('email', 'admin@fillmyship.com');
-                  form.setValue('password', 'Admin@123456');
-                }}
+                onClick={() => navigate('/admin-login')}
+              // {() => {
+              //   form.setValue('email', 'admin@fillmyship.com');
+              //   form.setValue('password', 'Admin@123456');
+              // }}
               >
                 Use Admin Credentials
               </Button>

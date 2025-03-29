@@ -16,17 +16,17 @@ const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  
+
   const navItems = [
     { label: 'Home', path: '/' },
     { label: 'Listings', path: '/listings' },
     { label: 'How It Works', path: '/how-it-works' },
   ];
-  
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
-  
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -41,22 +41,21 @@ const Navbar: React.FC = () => {
               <span className="ml-2 text-xl font-bold text-gray-900 tracking-tight">FillMyShip</span>
             </Link>
           </div>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive(item.path) ? 'text-primary' : 'text-gray-600'
-                }`}
+                className={`text-sm font-medium transition-colors hover:text-primary ${isActive(item.path) ? 'text-primary' : 'text-gray-600'
+                  }`}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
-          
+
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
             {user ? (
@@ -107,7 +106,7 @@ const Navbar: React.FC = () => {
               </>
             )}
           </div>
-          
+
           {/* Mobile Menu Button */}
           <button
             className="md:hidden"
@@ -122,7 +121,7 @@ const Navbar: React.FC = () => {
           </button>
         </div>
       </div>
-      
+
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden animate-fade-in">
@@ -131,17 +130,16 @@ const Navbar: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  isActive(item.path)
+                className={`block px-3 py-2 rounded-md text-base font-medium ${isActive(item.path)
                     ? 'bg-primary/10 text-primary'
                     : 'text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
-            
+
             {/* Mobile Auth Links */}
             {user ? (
               <>

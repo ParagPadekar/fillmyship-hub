@@ -14,13 +14,13 @@ const AdminLogin = () => {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       // Check hardcoded admin password (only for development!)
       if (password !== 'Admin@123456') {
         throw new Error('Invalid admin password');
       }
-      
+
       // Create admin session in localStorage
       const adminUser = {
         id: 'admin-special-id',
@@ -29,12 +29,12 @@ const AdminLogin = () => {
         role: 'admin',
         createdAt: new Date()
       };
-      
+
       localStorage.setItem('admin_user', JSON.stringify(adminUser));
       toast.success('Admin logged in successfully');
       navigate('/admin');
     } catch (error: any) {
-      toast.error(error.message || 'Admin login failed');
+      toast.error(error.message || ' failed');
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,6 @@
 
 import { Listing, Location, Review, SearchFilters } from '@/types';
+import { supabase } from './supabase';
 
 // Mock data generator
 const generateMockListings = (): Listing[] => {
@@ -27,7 +28,7 @@ const generateMockListings = (): Listing[] => {
   const generateReviews = (mediatorId: string): Review[] => {
     const reviewCount = Math.floor(Math.random() * 10) + 1;
     const reviews: Review[] = [];
-    
+
     for (let i = 0; i < reviewCount; i++) {
       const rating = Math.floor(Math.random() * 5) + 1;
       reviews.push({
@@ -48,32 +49,32 @@ const generateMockListings = (): Listing[] => {
         createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000)
       });
     }
-    
+
     return reviews;
   };
 
   const listings: Listing[] = [];
-  
+
   for (let i = 0; i < 50; i++) {
     const departureIndex = Math.floor(Math.random() * locations.length);
     let destinationIndex = Math.floor(Math.random() * locations.length);
-    
+
     // Ensure departure and destination are different
     while (destinationIndex === departureIndex) {
       destinationIndex = Math.floor(Math.random() * locations.length);
     }
-    
+
     const mediatorIndex = Math.floor(Math.random() * mediators.length);
     const mediator = mediators[mediatorIndex];
-    
+
     const now = new Date();
     const departureDate = new Date(now.getTime() + (Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000));
     const transitDays = Math.floor(Math.random() * 30) + 10;
     const deliveryDate = new Date(departureDate.getTime() + (transitDays * 24 * 60 * 60 * 1000));
-    
+
     const reviews = generateReviews(mediator.id);
     const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
-    
+
     listings.push({
       id: `listing${i}`,
       title: `Cargo from ${locations[departureIndex].port} to ${locations[destinationIndex].port}`,
@@ -103,23 +104,53 @@ const generateMockListings = (): Listing[] => {
       averageRating: isNaN(averageRating) ? 0 : averageRating
     });
   }
-  
+
   return listings;
 };
 
 // Initialize mock database with listings
-let mockListings = generateMockListings();
+const mockListings = generateMockListings();
 
-// Helper function to get ports from listings
-export const getAllPorts = (): string[] => {
+// if database is not connected, make search form safe by providing mock listings.
+// once connected, refresh with database listings
+export const getMockPorts = (): string[] => {
   const ports = new Set<string>();
-  
+
   mockListings.forEach(listing => {
     ports.add(listing.departureLocation.port);
     ports.add(listing.destinationLocation.port);
   });
-  
+
   return Array.from(ports).sort();
+};
+
+// Helper function to get ports from listings
+export const getAllPorts = async (): Promise<string[]> => {
+  const ports = new Set<string>();
+
+
+  try {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('route_origin, route_destination');
+
+    if (error) {
+      console.error('Error fetching ports:', error);
+      throw error;
+    }
+
+    // Add ports from the database results
+    data?.forEach(listing => {
+      if (listing.route_origin) ports.add(listing.route_origin);
+      if (listing.route_destination) ports.add(listing.route_destination);
+    });
+
+    // console.log("Array.from(ports).sort() - ", Array.from(ports).sort())
+    return Array.from(ports).sort();
+  } catch (error) {
+    console.error('Failed to fetch ports:', error);
+    return []; // Return empty array in case of error
+  }
 };
 
 // DB Operations
@@ -130,7 +161,7 @@ export const getApprovedListings = async (
   limit = 10
 ): Promise<{ listings: Listing[], total: number }> => {
   let filteredListings = mockListings.filter(listing => listing.status === 'approved');
-  
+
   // Apply filters
   if (filters) {
     if (filters.departure) {
@@ -138,13 +169,13 @@ export const getApprovedListings = async (
         listing => listing.departureLocation.port.toLowerCase().includes(filters.departure!.toLowerCase())
       );
     }
-    
+
     if (filters.destination) {
       filteredListings = filteredListings.filter(
         listing => listing.destinationLocation.port.toLowerCase().includes(filters.destination!.toLowerCase())
       );
     }
-    
+
     if (filters.departureDate) {
       filteredListings = filteredListings.filter(listing => {
         const listingDate = new Date(listing.departureDate);
@@ -156,7 +187,7 @@ export const getApprovedListings = async (
         );
       });
     }
-    
+
     if (filters.deliveryDate) {
       filteredListings = filteredListings.filter(listing => {
         const listingDate = new Date(listing.deliveryDate);
@@ -168,29 +199,29 @@ export const getApprovedListings = async (
         );
       });
     }
-    
+
     if (filters.maxPrice) {
       filteredListings = filteredListings.filter(
         listing => listing.pricePerTon <= filters.maxPrice!
       );
     }
   }
-  
+
   // Apply sorting
   if (sort === 'price') {
     filteredListings.sort((a, b) => a.pricePerTon - b.pricePerTon);
   } else if (sort === 'rating') {
     filteredListings.sort((a, b) => b.averageRating - a.averageRating);
   }
-  
+
   // Pagination
   const startIndex = (page - 1) * limit;
   const endIndex = startIndex + limit;
   const paginatedListings = filteredListings.slice(startIndex, endIndex);
-  
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
-  
+
   return {
     listings: paginatedListings,
     total: filteredListings.length
@@ -199,28 +230,28 @@ export const getApprovedListings = async (
 
 export const getPendingListings = async (): Promise<Listing[]> => {
   const pendingListings = mockListings.filter(listing => listing.status === 'pending');
-  
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
-  
+
   return pendingListings;
 };
 
 export const getMediatorListings = async (mediatorId: string): Promise<Listing[]> => {
   const mediatorListings = mockListings.filter(listing => listing.mediatorId === mediatorId);
-  
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
-  
+
   return mediatorListings;
 };
 
 export const getListingById = async (id: string): Promise<Listing | null> => {
   const listing = mockListings.find(listing => listing.id === id) || null;
-  
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
-  
+
   return listing;
 };
 
@@ -234,59 +265,59 @@ export const createListing = async (listing: Omit<Listing, 'id' | 'status' | 'cr
     reviews: [],
     averageRating: 0
   };
-  
+
   mockListings.push(newListing);
-  
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
-  
+
   return newListing;
 };
 
 export const updateListingStatus = async (id: string, status: 'approved' | 'rejected'): Promise<Listing> => {
   const listingIndex = mockListings.findIndex(listing => listing.id === id);
-  
+
   if (listingIndex === -1) {
     throw new Error('Listing not found');
   }
-  
+
   mockListings[listingIndex] = {
     ...mockListings[listingIndex],
     status,
     updatedAt: new Date()
   };
-  
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
-  
+
   return mockListings[listingIndex];
 };
 
 export const addReview = async (listingId: string, review: Omit<Review, 'id' | 'createdAt'>): Promise<Listing> => {
   const listingIndex = mockListings.findIndex(listing => listing.id === listingId);
-  
+
   if (listingIndex === -1) {
     throw new Error('Listing not found');
   }
-  
+
   const newReview: Review = {
     ...review,
     id: `review${Date.now()}`,
     createdAt: new Date()
   };
-  
+
   const updatedReviews = [...mockListings[listingIndex].reviews, newReview];
   const averageRating = updatedReviews.reduce((acc, r) => acc + r.rating, 0) / updatedReviews.length;
-  
+
   mockListings[listingIndex] = {
     ...mockListings[listingIndex],
     reviews: updatedReviews,
     averageRating,
     updatedAt: new Date()
   };
-  
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
-  
+
   return mockListings[listingIndex];
 };
