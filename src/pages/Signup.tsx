@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -42,6 +41,7 @@ const signupSchema = z.object({
     required_error: 'Please select a role',
   }),
   company: z.string().optional(),
+  companyAddress: z.string().optional(),
 });
 
 type SignupValues = z.infer<typeof signupSchema>;
@@ -59,6 +59,7 @@ const Signup = () => {
       password: '',
       role: 'customer',
       company: '',
+      companyAddress: '',
     },
   });
 
@@ -74,6 +75,7 @@ const Signup = () => {
             username: data.username,
             role: data.role,
             company: data.company,
+            companyAddress: data.companyAddress,
           },
         },
       });
@@ -170,19 +172,35 @@ const Signup = () => {
                   )}
                 />
                 {showCompanyField && (
-                  <FormField
-                    control={form.control}
-                    name="company"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your company name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your company name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="companyAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Address</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your company address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Creating account..." : "Create account"}

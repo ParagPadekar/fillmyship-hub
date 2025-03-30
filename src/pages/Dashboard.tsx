@@ -5,11 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 const Dashboard = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (loading) return;
 
     if (!user) {
       toast.error('Please login to access the dashboard');
@@ -18,7 +18,7 @@ const Dashboard = () => {
     }
 
     // Redirect users based on role
-    switch (user.role) {
+    switch (user.user_metadata.role) {
       case 'admin':
         navigate('/admin');
         break;
@@ -33,7 +33,7 @@ const Dashboard = () => {
         toast.error('Unknown user role');
         navigate('/');
     }
-  }, [user, isLoading, navigate]);
+  }, [user, loading, navigate]);
 
   // Show loading state while authentication is in progress
   return (

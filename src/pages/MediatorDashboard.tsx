@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import ListingForm from '@/components/ui-custom/ListingForm';
 
 const MediatorDashboard = () => {
-  const { user } = useAuth();
+  // const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,151 +22,45 @@ const MediatorDashboard = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
 
-  const fetchMediatorListings = async () => {
-    if (!user) return;
 
-    setIsLoading(true);
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    const fetchWithTimeout = async () => {
-      const timeout = 10000; // 10 seconds
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-      try {
-        console.log('Mediator Dashboard: Fetching listings for mediator ID:', user.id);
-
-        const { data, error } = await supabase
-          .from('listings')
-          .select('*', { head: false })
-          .eq('mediator_id', user.id)
-          .abortSignal(controller.signal);
-
-        clearTimeout(timeoutId);
-
-        if (error) {
-          console.error('Supabase error details:', error);
-          throw error;
-        }
-
-        console.log('Mediator Dashboard: Listings fetched successfully:', data);
-        setListings(data || []);
-        setIsLoading(false);
-      } catch (error) {
-        clearTimeout(timeoutId);
-
-        if (error.name === 'AbortError') {
-          throw new Error('Request timed out');
-        }
-        throw error;
-      }
-    };
-
-    const attemptFetch = async () => {
-      try {
-        await fetchWithTimeout();
-      } catch (error) {
-        console.error(`Attempt ${retryCount + 1} failed:`, error);
-
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.log(`Retrying... Attempt ${retryCount} of ${maxRetries}`);
-          // Exponential backoff: 1s, 2s, 4s
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount - 1) * 1000));
-          return attemptFetch();
-        } else {
-          toast.error('Failed to fetch your listings. Please try again later.');
-          setIsLoading(false);
-          throw error;
-        }
-      }
-    };
-
-    try {
-      // Check connection first
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Session expired. Please login again.');
-        navigate('/login');
-        return;
-      }
-
-      await attemptFetch();
-    } catch (error) {
-      console.error('Final error fetching mediator listings:', error);
-      setIsLoading(false);
-    }
-  };
-
-  // Update the refresh function to be more robust
-  const refreshListings = () => {
-    console.log('Mediator Dashboard: Refreshing listings');
-    toast.info('Refreshing listings...');
-
-    // Add a small delay before fetching to ensure any database updates are complete
-    setTimeout(() => {
-      fetchMediatorListings().then(() => {
-        toast.success('Listings refreshed successfully');
-      }).catch(() => {
-        toast.error('Failed to refresh listings');
-      });
-    }, 1000);
-  };
 
   useEffect(() => {
-    let mounted = true;
-
     if (!user) {
-      navigate('/login');
-      return;
+      console.log("User is null, waiting for AuthContext to provide session...");
+      return; // Wait until AuthContext provides the user
     }
 
-    if (user.role !== 'mediator') {
-      toast.error('Unauthorized access');
-      navigate('/');
-      return;
-    }
+    console.log("User from AuthContext:", user);
+    fetchMediatorListings(user); // Fetch listings only after user is available
 
-    const loadListings = async () => {
-      if (!mounted) return;
-      await fetchMediatorListings();
-    };
+    const channel = supabase
+      .channel('listings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'listings' }, (payload) => {
+        console.log('Change detected:', payload);
+        fetchMediatorListings(user); // Ensure fresh data is fetched
+      })
+      .subscribe();
 
-    loadListings();
-
-    // Cleanup function
     return () => {
-      mounted = false;
+      supabase.removeChannel(channel);
     };
-  }, [user, navigate, refreshTrigger]);
+  }, [user, refreshTrigger]); // Depend on user and refreshTrigger
 
 
-  // useEffect_Old(() => {
-  //   if (!user) {
-  //     navigate('/login');
-  //     return;
-  //   }
 
-  //   if (user.role !== 'mediator') {
-  //     toast.error('Unauthorized access');
-  //     navigate('/');
-  //     return;
-  //   }
 
-  //   fetchMediatorListings();
-  // }, [user, navigate, refreshTrigger]);
+  const fetchMediatorListings = async (user) => {
 
-  const fetchMediatorListings_old = async () => {
+    console.log("check if user exists - ", user)
     if (!user) return;
 
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
       console.log('Mediator Dashboard: Fetching listings for mediator ID:', user.id);
 
       const { data, error } = await supabase
         .from('listings')
-        .select('*')
+        .select('*', { head: false })
         .eq('mediator_id', user.id);
 
       if (error) {
@@ -183,12 +78,12 @@ const MediatorDashboard = () => {
     }
   };
 
-  const refreshListings_old = () => {
-    console.log('Mediator Dashboard: Refreshing listings');
-    fetchMediatorListings();
-    setRefreshTrigger(prev => prev + 1);
-    toast.info('Refreshing listings...');
-  };
+  // const refreshListings = () => {
+  //   setRefreshTrigger(prev => prev + 1);
+  //   console.log('Mediator Dashboard: Refreshing listings');
+  //   // fetchMediatorListings();
+  //   toast.info('Refreshing listings...');
+  // };
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -207,7 +102,7 @@ const MediatorDashboard = () => {
 
   const handleDialogClose = () => {
     setIsDialogOpen(false);
-    refreshListings(); // Refresh listings after form is closed
+    // refreshListings(); // Refresh listings after form is closed
   };
 
   return (
@@ -216,10 +111,10 @@ const MediatorDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Mediator Dashboard</h1>
           <div className="flex space-x-2">
-            <Button variant="outline" onClick={refreshListings}>
+            {/* <Button variant="outline" onClick={refreshListings}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
-            </Button>
+            </Button> */}
             <Button onClick={handleCreateListing}>
               <Plus className="mr-2 h-4 w-4" />
               Create New Listing

@@ -11,28 +11,29 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
 const Profile = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState(user?.username || '');
-  const [company, setCompany] = useState(user?.company || '');
+  const [username, setUsername] = useState(user?.user_metadata.username || '');
+  const [company, setCompany] = useState(user?.user_metadata.company || '');
+  const [companyAddress, setCompanyAddress] = useState(user?.user_metadata.companyAddress || '');
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Redirect if not logged in
   React.useEffect(() => {
-    if (!isLoading && !user) {
+    if (!loading && !user) {
       toast.error('Please login to view your profile');
       navigate('/login');
     }
-  }, [user, isLoading, navigate]);
+  }, [user, loading, navigate]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) return;
-    
+
     try {
       setIsUpdating(true);
-      
+
       // Update the profile in the database
       const { error } = await supabase
         .from('profiles')
@@ -42,9 +43,9 @@ const Profile = () => {
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
-      
+
       if (error) throw error;
-      
+
       toast.success('Profile updated successfully');
     } catch (error: any) {
       console.error('Error updating profile:', error);
@@ -54,7 +55,7 @@ const Profile = () => {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Layout>
         <div className="container py-8">
@@ -71,7 +72,7 @@ const Profile = () => {
       <div className="container py-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">My Profile</h1>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
@@ -81,46 +82,56 @@ const Profile = () => {
               <form onSubmit={handleUpdateProfile} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    value={user?.email} 
-                    disabled 
+                  <Input
+                    id="email"
+                    value={user?.email}
+                    disabled
                     className="bg-gray-50"
                   />
                   <p className="text-xs text-muted-foreground">Email cannot be changed</p>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="username">Username</Label>
-                  <Input 
-                    id="username" 
-                    value={username} 
+                  <Input
+                    id="username"
+                    value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your username" 
+                    placeholder="Enter your username"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="company">Company</Label>
-                  <Input 
-                    id="company" 
-                    value={company} 
+                  <Input
+                    id="company"
+                    value={company}
                     onChange={(e) => setCompany(e.target.value)}
-                    placeholder="Enter your company name (optional)" 
+                    placeholder="Enter your company name (optional)"
                   />
                 </div>
-                
+
+                <div className="space-y-2">
+                  <Label htmlFor="company">Company Address</Label>
+                  <Input
+                    id="companyAddress"
+                    value={companyAddress}
+                    onChange={(e) => setCompanyAddress(e.target.value)}
+                    placeholder="Enter your company address (optional)"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
-                  <Input 
-                    id="role" 
-                    value={user?.role || 'customer'} 
-                    disabled 
+                  <Input
+                    id="role"
+                    value={user?.role || 'customer'}
+                    disabled
                     className="bg-gray-50"
                   />
                   <p className="text-xs text-muted-foreground">Role cannot be changed</p>
                 </div>
-                
+
                 <div className="pt-4">
                   <Button type="submit" disabled={isUpdating}>
                     {isUpdating ? 'Updating...' : 'Update Profile'}
