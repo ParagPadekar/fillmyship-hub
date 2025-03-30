@@ -230,7 +230,10 @@ export const AuthProvider: React.FC = ({ children }) => {
     };
   }, []); // end use effect
 
-  const signup = async (username: string, email: string, password: string, role: 'customer' | 'mediator' | 'admin') => {
+  const signup = async (username: string, email: string, password: string, role: 'customer' | 'mediator' | 'admin',
+    company_name: string,
+    company_address: string
+  ) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -240,11 +243,25 @@ export const AuthProvider: React.FC = ({ children }) => {
           data: {
             username,
             role,
+            company_name,
+            company_address
           },
         },
       });
 
       if (error) throw error;
+
+      // Then create the profile record
+      // console.log("user registered success- ", data);
+      // const { error: profileError } = await supabase
+      //   .from('profiles')
+      //   .update({
+      //     company_name: data.user.user_metadata.companyName,
+      //     company_address: data.user.user_metadata.companyAddress,
+      //     updated_at: new Date().toISOString()
+      //   })
+      //   .eq('id', data.user!.id);
+      // if (profileError) throw profileError;
 
       toast.success('Signup successful. Please check your email to confirm your account.');
       return data;

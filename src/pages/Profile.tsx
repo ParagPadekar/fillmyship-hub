@@ -39,7 +39,8 @@ const Profile = () => {
         .from('profiles')
         .update({
           username,
-          company,
+          company_name: company,
+          company_address: companyAddress,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);

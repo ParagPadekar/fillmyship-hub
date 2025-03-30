@@ -40,7 +40,7 @@ const signupSchema = z.object({
   role: z.enum(['customer', 'mediator'], {
     required_error: 'Please select a role',
   }),
-  company: z.string().optional(),
+  companyName: z.string().optional(),
   companyAddress: z.string().optional(),
 });
 
@@ -58,7 +58,7 @@ const Signup = () => {
       email: '',
       password: '',
       role: 'customer',
-      company: '',
+      companyName: '',
       companyAddress: '',
     },
   });
@@ -74,7 +74,7 @@ const Signup = () => {
           data: {
             username: data.username,
             role: data.role,
-            company: data.company,
+            company: data.companyName,
             companyAddress: data.companyAddress,
           },
         },
@@ -175,7 +175,7 @@ const Signup = () => {
                   <div>
                     <FormField
                       control={form.control}
-                      name="company"
+                      name="companyName"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Company Name</FormLabel>
