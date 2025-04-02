@@ -40,8 +40,11 @@ const signupSchema = z.object({
   role: z.enum(['customer', 'mediator'], {
     required_error: 'Please select a role',
   }),
-  companyName: z.string().optional(),
-  companyAddress: z.string().optional(),
+  company_name: z.string().optional(),
+  company_address: z.string().optional(),
+  contact_phone: z.string().optional(),
+  licence_number: z.string().optional(),
+  insurance: z.string().optional(),
 });
 
 type SignupValues = z.infer<typeof signupSchema>;
@@ -58,29 +61,54 @@ const Signup = () => {
       email: '',
       password: '',
       role: 'customer',
-      companyName: '',
-      companyAddress: '',
+      company_name: '',
+      company_address: '',
+      contact_phone: '',
+      licence_number: '',
+      insurance: '',
     },
   });
 
-  const onSubmit = async (data: SignupValues) => {
+  const onSubmit = async (passedData: SignupValues) => {
     setIsLoading(true);
     try {
       // Register with Supabase
-      const { error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
+      const { data, error } = await supabase.auth.signUp({
+        email: passedData.email,
+        password: passedData.password,
         options: {
           data: {
-            username: data.username,
-            role: data.role,
-            company: data.companyName,
-            companyAddress: data.companyAddress,
+            username: passedData.username,
+            role: passedData.role,
+            company_name: passedData.company_name,
+            company_address: passedData.company_address,
+            contact_phone: passedData.contact_phone,
+            licence_number: passedData.licence_number,
+            insurance: passedData.insurance,
+
           },
         },
       });
 
       if (error) throw error;
+
+      // Then create the profile record
+      console.log("user registered success- ", data);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          email: passedData.email,
+          company_name: passedData.company_name,
+          company_address: passedData.company_address,
+          contact_phone: passedData.contact_phone,
+          licence_number: passedData.licence_number,
+          insurance: passedData.insurance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', data!.user!.id);
+
+      if (profileError) throw profileError;
+
 
       toast.success('Account created successfully! Please check your email to confirm your account.');
       navigate('/login');
@@ -175,7 +203,7 @@ const Signup = () => {
                   <div>
                     <FormField
                       control={form.control}
-                      name="companyName"
+                      name="company_name"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Company Name</FormLabel>
@@ -189,12 +217,54 @@ const Signup = () => {
 
                     <FormField
                       control={form.control}
-                      name="companyAddress"
+                      name="contact_phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Phone</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your company phone" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="company_address"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Company Address</FormLabel>
                           <FormControl>
                             <Input placeholder="Your company address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="licence_number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Licence Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your licence number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="insurance"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Insurance</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your company insurance" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

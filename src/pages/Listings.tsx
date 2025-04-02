@@ -183,8 +183,8 @@ import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import SearchForm from '@/components/ui-custom/SearchForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Ship, ArrowUpDown, ChevronLeft, ChevronRight, Building, MapPin, X, Mail } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { Ship, ArrowUpDown, ChevronLeft, ChevronRight, Building, MapPin, X, Mail, Link } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { SearchFilters } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -475,7 +475,20 @@ const Listings = () => {
                             <TableCell className="text-right">
                               <Button variant="outline" size="sm"
                                 onClick={() => handleViewMediator(listing)}
-                                disabled={loadingMediator}>{loadingMediator ? "Loading..." : "View"}</Button>
+                                disabled={loadingMediator}>{loadingMediator ? "Loading..." : "View"}
+                              </Button>
+
+                              <NavLink to={`/listings/${listing.id}`} className="flex-1">
+                                <Button
+                                  variant="outline" size="sm"
+                                  // className="w-full border-ship-600 text-ship-600 hover:bg-ship-50"
+                                  disabled={loadingMediator}
+                                >
+                                  {loadingMediator ? "Loading..." : "View Details"}
+
+                                </Button>
+                              </NavLink>
+
                             </TableCell>
                           </TableRow>
                         ))}

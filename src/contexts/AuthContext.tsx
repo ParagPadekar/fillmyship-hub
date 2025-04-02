@@ -175,7 +175,7 @@ import { supabase } from '@/lib/supabase'; // Ensure this imports your supabase 
 import { toast } from 'sonner';
 import { User } from '@supabase/supabase-js';
 import { Session } from 'inspector/promises';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 // Define the shape of the context
 interface AuthContextType {
@@ -188,8 +188,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC = ({ children }) => {
-  const [user, setUser] = useState<any>(null); // User state can be typed more specifically based on your needs
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null); // Using User type from supabase
   const [loading, setLoading] = useState(true); // Track loading state
 
   // const navigate = useNavigate();
@@ -232,7 +232,11 @@ export const AuthProvider: React.FC = ({ children }) => {
 
   const signup = async (username: string, email: string, password: string, role: 'customer' | 'mediator' | 'admin',
     company_name: string,
-    company_address: string
+    company_address: string,
+    company_phone: string,
+    licence_number: string,
+    insurance: string,
+
   ) => {
     setLoading(true);
     try {
@@ -244,7 +248,10 @@ export const AuthProvider: React.FC = ({ children }) => {
             username,
             role,
             company_name,
-            company_address
+            company_address,
+            company_phone,
+            licence_number,
+            insurance
           },
         },
       });
