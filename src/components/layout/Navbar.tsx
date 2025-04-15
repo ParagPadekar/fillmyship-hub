@@ -170,7 +170,7 @@ const Navbar: React.FC = () => {
                   >
                     Profile
                   </Link>
-                  {user.role === 'admin' && (
+                  {user.user_metadata.role === 'admin' && (
                     <Link
                       to="/admin"
                       className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
@@ -191,6 +191,7 @@ const Navbar: React.FC = () => {
                 </div>
               </>
             ) : (
+
               <div className="pt-4 pb-2 border-t border-gray-200">
                 <Link
                   to="/login"
@@ -207,6 +208,7 @@ const Navbar: React.FC = () => {
                   Sign up
                 </Link>
               </div>
+
             )}
           </div>
         </div>

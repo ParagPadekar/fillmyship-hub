@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
@@ -7,12 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  BarChart, 
-  CheckCircle, 
-  XCircle, 
-  Users, 
-  Ship, 
+import {
+  BarChart,
+  CheckCircle,
+  XCircle,
+  Users,
+  Ship,
   AlertTriangle,
   Loader2,
   RefreshCw
@@ -45,7 +45,7 @@ const AdminDashboard = () => {
       if (user && user.role === 'admin') {
         return true;
       }
-      
+
       // Check if admin is logged in via local storage
       const storedAdmin = localStorage.getItem('admin_user');
       if (storedAdmin) {
@@ -59,7 +59,7 @@ const AdminDashboard = () => {
           console.error('Error parsing admin user data:', e);
         }
       }
-      
+
       return false;
     };
 
@@ -80,7 +80,7 @@ const AdminDashboard = () => {
       setError(null);
       try {
         console.log('Admin Dashboard: Fetching all listings from Supabase...');
-        
+
         // Fetch all listings - using the Supabase client from integrations
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
           console.log('Admin Dashboard: Fetched listings:', listingsData);
           const allListings = listingsData || [];
           setListings(allListings);
-          
+
           // Filter pending listings
           const pending = allListings.filter(listing => listing.status === 'pending');
           console.log('Admin Dashboard: Pending listings:', pending);
@@ -109,8 +109,8 @@ const AdminDashboard = () => {
 
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
-          setError((prevError) => prevError 
-            ? `${prevError}. Also failed to fetch profiles: ${profilesError.message}` 
+          setError((prevError) => prevError
+            ? `${prevError}. Also failed to fetch profiles: ${profilesError.message}`
             : `Failed to fetch profiles: ${profilesError.message}`);
           setUsers([]);
         } else {
@@ -139,20 +139,20 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       console.log('Approving listing with ID:', id);
-      
+
       const { error } = await supabase
         .from('listings')
         .update({ status: 'approved' })
         .eq('id', id);
-      
+
       if (error) {
         console.error('Error approving listing:', error);
         toast.error(`Failed to approve listing: ${error.message}`);
         throw error;
       }
-      
+
       toast.success('Listing approved');
-      
+
       // Trigger a refresh to update the listings
       setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
@@ -167,20 +167,20 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       console.log('Rejecting listing with ID:', id);
-      
+
       const { error } = await supabase
         .from('listings')
         .update({ status: 'rejected' })
         .eq('id', id);
-      
+
       if (error) {
         console.error('Error rejecting listing:', error);
         toast.error(`Failed to reject listing: ${error.message}`);
         throw error;
       }
-      
+
       toast.success('Listing rejected');
-      
+
       // Trigger a refresh to update the listings
       setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
@@ -351,18 +351,18 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>${listing.price_per_ton}</TableCell>
                           <TableCell className="text-right space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
                               onClick={() => handleApproveListing(listing.id)}
                             >
                               <CheckCircle className="mr-1 h-4 w-4" />
                               Approve
                             </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
                               onClick={() => handleRejectListing(listing.id)}
                             >
@@ -452,20 +452,31 @@ const AdminDashboard = () => {
                           <TableCell className="font-medium">{listing.title}</TableCell>
                           <TableCell>{listing.mediator_name}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              listing.status === 'approved' 
-                              ? 'bg-green-100 text-green-800' 
+                            <span className={`px-2 py-1 rounded-full text-xs ${listing.status === 'approved'
+                              ? 'bg-green-100 text-green-800'
                               : listing.status === 'rejected'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                            }`}>
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                              }`}>
                               {listing.status}
                             </span>
                           </TableCell>
                           <TableCell>${listing.price_per_ton}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm" className="mr-2">View</Button>
-                            <Button variant="outline" size="sm">Edit</Button>
+
+                            <NavLink to={`/listings/${listing.id}`} className="flex-1">
+                              <Button
+                                variant="outline" size="sm"
+                              // className="w-full border-ship-600 text-ship-600 hover:bg-ship-50"
+                              // disabled={loadingMediator}
+                              >
+                                View Details
+
+                              </Button>
+                            </NavLink>
+
+                            {/* <Button variant="outline" size="sm" className="mr-2">View</Button> */}
+                            {/* <Button variant="outline" size="sm">Edit</Button> */}
                           </TableCell>
                         </TableRow>
                       ))}

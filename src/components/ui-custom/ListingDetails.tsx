@@ -30,6 +30,54 @@ import defaultUserLogo from "../../../public/user.png";
 import { supabase } from "@/lib/supabase";
 import { toast } from 'sonner';
 import { userInfo } from "os";
+import { fetchListingDetails, fetchMediatorDetails } from "@/lib/db";
+import { useAuth } from "@/contexts/AuthContext";
+
+
+// export const fetchMediatorDetails = async (mediatorId: string) => {
+//     // setLoadingMediator(true);
+//     try {
+//         const { data, error } = await supabase
+//             .from('profiles')
+//             .select('*')
+//             .eq('id', mediatorId)
+//             .single();
+
+//         if (error) {
+//             console.error('Error fetching mediator details:', error);
+//             toast.error('Failed to load mediator profile.');
+//             throw error;
+//         }
+
+//         return data;
+
+//         //   setSelectedMediator(data);
+//         //   setIsModalOpen(true);
+//     } catch (error) {
+//         console.error('Error:', error);
+//     } finally {
+//         //   setLoadingMediator(false);
+
+//     }
+
+// };
+
+// // fetch the listing details
+// const fetchListingDetails = async (listingId: string) => {
+
+//     const { data, error } = await supabase
+//         .from('listings')
+//         .select('*')
+//         .eq('id', listingId)
+//         .single();
+
+//     if (error) {
+//         console.error('Error fetching listings:', error);
+//         throw error;
+//     }
+//     // const listing = data;
+//     return data;
+// }
 
 const ListingDetails = () => {
     const { id } = useParams<{ id: string }>();
@@ -39,12 +87,28 @@ const ListingDetails = () => {
     // const { user } = useUser();
     // const { toast } = useToast();
 
+    const { user, loading } = useAuth();
+
+
+
     // fetch mediator of that listing
     // Function to fetch mediator details
     const fetchAllData = async () => {
 
-        const found_listing = await fetchListingDetails();
+        let found_listing = await fetchListingDetails(id);
+
+
+        found_listing = {
+            ...found_listing,
+            capacity: {
+                total: found_listing.capacity,
+                available: found_listing.capacity - found_listing.capacity_used,
+                unit: 'TEU' // or whatever unit you're using
+            }
+        };
+        // console.log("bEFOREEE Boookigb forn ksitnt - " + JSON.stringify(found_listing))
         setListing(found_listing);
+
 
         const mediator = await fetchMediatorDetails(found_listing.mediator_id);
         setMediator(mediator);
@@ -56,50 +120,7 @@ const ListingDetails = () => {
 
     }
 
-    const fetchMediatorDetails = async (mediatorId: string) => {
-        // setLoadingMediator(true);
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', mediatorId)
-                .single();
 
-            if (error) {
-                console.error('Error fetching mediator details:', error);
-                toast.error('Failed to load mediator profile.');
-                throw error;
-            }
-
-            return data;
-
-            //   setSelectedMediator(data);
-            //   setIsModalOpen(true);
-        } catch (error) {
-            console.error('Error:', error);
-        } finally {
-            //   setLoadingMediator(false);
-
-        }
-
-    };
-
-    // fetch the listing details
-    const fetchListingDetails = async () => {
-
-        const { data, error } = await supabase
-            .from('listings')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) {
-            console.error('Error fetching listings:', error);
-            throw error;
-        }
-        // const listing = data;
-        return data;
-    }
 
     useEffect(() => {
         // In a real app, we would fetch the listing details from an API
@@ -247,14 +268,14 @@ const ListingDetails = () => {
                                                 <span className="text-gray-700">Available Capacity:</span>
                                                 <span className="font-medium">
                                                     {/* {listing.capacity_used} / {listing.capacity} {listing.capacity.unit} */}
-                                                    {listing.capacity - listing.capacity_used} / {listing.capacity} {listing.capacity.unit}
+                                                    {listing.capacity.available} / {listing.capacity.total} {listing.capacity.unit}
                                                 </span>
                                             </div>
                                             <div className="w-full bg-gray-200 rounded-full h-2">
                                                 <div
                                                     className="bg-blue-500 h-2 rounded-full"
                                                     style={{
-                                                        width: `${(listing.capacity_used / listing.capacity) * 100}%`
+                                                        width: `${(listing.capacity_used / listing.capacity.total) * 100}%`
                                                     }}
                                                 ></div>
                                             </div>
@@ -484,7 +505,7 @@ const ListingDetails = () => {
 
                                     <div className="flex justify-between">
                                         <span className="text-gray-700">Capacity Available:</span>
-                                        <span className="font-medium">{listing.capacity - listing.capacity_used} {listing.capacity.unit}</span>
+                                        <span className="font-medium">{listing.capacity.available} {listing.capacity.unit}</span>
                                     </div>
 
                                     <div className="flex justify-between">
@@ -501,9 +522,12 @@ const ListingDetails = () => {
                                         <Button
                                             // className="w-full bg-ship-600 hover:bg-ship-700 mb-2"
                                             className="w-full h-10 bg-primary hover:bg-primary/90 mb-2"
-                                            onClick={handleBookNow}
+                                        // onClick={handleBookNow}
                                         >
-                                            Book Now
+                                            <Link to={user ? `/booking/${listing._id || listing.id}` : "#"} onClick={!user ? handleBookNow : undefined}>
+                                                {listing.capacity.available > 0 ? "Book Now" : "Fully Booked"}
+                                            </Link>
+                                            {/* Book Now */}
                                         </Button>
 
                                         {/* <Button variant="outline" className="w-full">

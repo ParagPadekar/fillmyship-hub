@@ -21,6 +21,7 @@ import { supabase } from "./lib/supabase";
 import { toast } from "sonner";
 import AdminLogin from "./pages/AdminLogin";
 import ListingDetails from "./components/ui-custom/ListingDetails";
+import BookingPage from "./components/ui-custom/BookingPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -118,6 +119,7 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/listings/:id" element={<ListingDetails />} />
+              <Route path="/booking/:id" element={<BookingPage />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

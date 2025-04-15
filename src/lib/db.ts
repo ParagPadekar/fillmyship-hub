@@ -1,6 +1,7 @@
 
 import { Listing, Location, Review, SearchFilters } from '@/types';
 import { supabase } from './supabase';
+import { toast } from 'sonner';
 
 // Mock data generator
 const generateMockListings = (): Listing[] => {
@@ -320,4 +321,41 @@ export const addReview = async (listingId: string, review: Omit<Review, 'id' | '
   await new Promise(resolve => setTimeout(resolve, 300));
 
   return mockListings[listingIndex];
+};
+
+
+// ADDED FOR NEW CODE - UMG
+
+export const fetchMediatorDetails = async (mediatorId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', mediatorId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching mediator details:', error);
+      toast.error('Failed to load mediator profile.');
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+export const fetchListingDetails = async (listingId: string) => {
+  const { data, error } = await supabase
+    .from('listings')
+    .select('*')
+    .eq('id', listingId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching listings:', error);
+    throw error;
+  }
+  return data;
 };
