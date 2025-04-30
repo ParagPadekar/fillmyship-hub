@@ -1,6 +1,12 @@
 # Welcome to FillMyShip
 
 ## Project info
+The cargo shipping industry is highly fragmented, with numerous mediators responsible for filling
+cargo ships with goods from multiple clients. FillMyShip aims to consolidate these mediators
+onto a single platform, much like Google Flights does for airline tickets. Businesses can compare
+shipping options based on price, past reliability, and service quality, making cargo transport more
+transparent and efficient through a user-friendly interface that supports searching, filtering, and
+direct communication between parties.
 
 **URL**: https://fillmyshiphub.netlify.app/
 
