@@ -1,59 +1,69 @@
 # Welcome to FillMyShip
+# FillMyShip Project Evolution Journey
 
-## Project info
-The cargo shipping industry is highly fragmented, with numerous mediators responsible for filling
-cargo ships with goods from multiple clients. FillMyShip aims to consolidate these mediators
-onto a single platform, much like Google Flights does for airline tickets. Businesses can compare
-shipping options based on price, past reliability, and service quality, making cargo transport more
-transparent and efficient through a user-friendly interface that supports searching, filtering, and
-direct communication between parties.
+An interactive visualization showcasing the development journey of FillMyShip - a platform connecting cargo mediators with businesses for transparent shipping solutions.
 
-**URL**: https://fillmyshiphub.netlify.app/
+## 🚢 About FillMyShip
 
+FillMyShip aims to consolidate cargo shipping mediators onto a single platform, similar to how Google Flights works for airline tickets. The platform enables businesses to compare shipping options based on price, past reliability, and service quality, making cargo transport more transparent and efficient.
 
-**Use your preferred IDE**
+## 🔗 Live Platform
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+The actual FillMyShip platform prototype can be accessed at: https://fillmyshiphub.netlify.app/
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 📊 About This Visualization
 
-Follow these steps:
+This repository contains an interactive timeline visualization that illustrates our project's evolution from concept to MVP, highlighting:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Our initial vision and market research
+- Technology stack decisions and architecture development
+- Database migration from MongoDB to Supabase
+- Our critical business pivot based on industry feedback
+- Key lessons learned throughout the development process
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🔄 The Critical Pivot
 
-# Step 3: Install the necessary dependencies.
-npm i
+One of the most significant moments in our journey was pivoting from processing bookings directly on our platform to focusing on discovery and comparison while directing users to mediator portals for transactions. This decision was based on valuable feedback from industry professionals at Global Fillers and Consolidators, who highlighted legal complexities that would be challenging within our development timeline.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## 🛠️ Tech Stack
 
-**Edit a file directly in GitHub**
+The actual FillMyShip platform uses:
+- **Frontend**: React.js with Redux for state management
+- **UI**: Tailwind CSS for styling and responsive design
+- **Backend**: Node.js with Express.js
+- **Authentication**: Supabase Auth with JWT tokens
+- **Database**: Supabase (PostgreSQL)
+- **Cloud Hosting**: Netlify
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
+This visualization is built with:
 - React
-- shadcn-ui
 - Tailwind CSS
+- Lucide React icons
+
+## 🧠 Key Learnings
+
+Through this project, we gained valuable insights:
+
+**Technical Insights:**
+- Database selection impacts the entire development lifecycle
+- Authentication flows require extensive cross-scenario testing
+- Multi-level validation is essential for data integrity
+
+**Business Insights:**
+- Industry feedback is critical to avoiding legal pitfalls
+- Focus on core value proposition rather than feature bloat
+- Being adaptable to pivot based on market realities is crucial
+
+
+
+## 👥 Team
+
+- Parag Subhash Padekar (padekar.1@osu.edu)
+- Umang Viral Somani (somani.30@osu.edu)
+- Mrunal Madhav Hole (hole.1@osu.edu)
+
+## 📝 License
+
+This project is [MIT](LICENSE) licensed.
+
 
